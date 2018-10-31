@@ -3,9 +3,10 @@
 import pygame
 
 from roengine.util import DummySprite
+from roengine.gui import Text
 from pygame.locals import *
 
-__all__ = ['Button', 'buttons']
+__all__ = ['Button', 'buttons', 'CheckBox', 'CheckButton']
 
 
 class _ButtonRegistry(object):
@@ -16,6 +17,10 @@ class _ButtonRegistry(object):
     def register(self, button):
         self.group.add(button)
         self.set_visible(button, button.visible)
+
+    def unregister(self, button):
+        self.group.remove(button)
+        self.visible_bts.remove(button)
 
     def set_visible(self, button, visible):
         if visible and button not in self.visible_bts:
@@ -76,3 +81,46 @@ class Button(pygame.sprite.Sprite):
 
     def on_click_end(self, event):
         pass
+
+
+class CheckButton(Button):
+    def __init__(self, clicked=False, down=(0, 0, 255), up=(255, 255, 255), size=15, thickness=1):
+        self.image = pygame.Surface([size, size]).convert()
+        self.image.fill([0, 0, 0])
+
+        self.inner = pygame.Surface([size-thickness*2, size-thickness*2])
+        self.down, self.up = down, up
+        self.inner.fill(down if clicked else up)
+
+        self.clicked = clicked
+        self.thickness = thickness
+
+        self.image.blit(self.inner, [self.thickness, self.thickness])
+
+        Button.__init__(self, self.image)
+
+    def on_click_start(self, event):
+        self.clicked ^= True
+        self.inner.fill(self.down if self.clicked else self.up)
+        self.image.blit(self.inner, [self.thickness, self.thickness])
+
+
+class CheckBox(Button):
+    def __init__(self, text):
+        self.check_box = CheckButton()
+        self.clicked = self.check_box.clicked
+        buttons.unregister(self.check_box)
+        self.text = Text(text)
+        self.dim = [self.check_box.image.get_width()+self.text.image.get_width()+20,
+                    max(self.check_box.image.get_height(), self.text.image.get_height())+10]
+        self.image = pygame.Surface(self.dim, SRCALPHA, 32).convert_alpha()
+        self.image.blit(self.text.image, [self.check_box.image.get_width()+10, 5])
+        self.image.blit(self.check_box.image, [3, 5])
+        Button.__init__(self, self.image)
+
+    def on_click_start(self, event):
+        self.check_box.on_click_start(event)
+        self.clicked = self.check_box.clicked
+        self.image = pygame.Surface(self.dim, SRCALPHA, 32).convert_alpha()
+        self.image.blit(self.text.image, [self.check_box.image.get_width() + 10, 5])
+        self.image.blit(self.check_box.image, [3, 5])

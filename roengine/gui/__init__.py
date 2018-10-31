@@ -1,4 +1,4 @@
 from .text import *
 from .button import *
 
-__all__ = ['Text', 'Button', 'buttons']
+__all__ = ['Text', 'Button', 'buttons', 'CheckBox', 'CheckButton']

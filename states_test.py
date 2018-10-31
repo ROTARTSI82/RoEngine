@@ -42,11 +42,14 @@ class MyGame(Game):
         bt2image = pygame.Surface([100, 25]).convert()
         bt2image.fill([255, 255, 0])
         self.bt2 = StateBt(bt2image, (200, 200), "state2", (0, 255, 0))
+        self.check = CheckBox("Hello!")
+        self.check.rect.center = (300, 300)
         self.running = True
 
     def tick_state1(self):
         self.screen.fill([255, 255, 255])
         self.screen.blit(self.bt2.image, self.bt2.rect)
+        self.screen.blit(self.check.image, self.check.rect)
         pygame.display.flip()
         for event in pygame.event.get():
             [bt.update_event(event) for bt in buttons.visible_bts]

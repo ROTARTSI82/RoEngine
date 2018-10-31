@@ -12,4 +12,4 @@ from .gui import *
 
 __all__ = ["Map", "DummySprite", "PlatformerPlayer", "Projectile", "GenericUDPClient", "GenericTCPClient", "Game",
            "GenericClientFactory", "reactor", "GenericUDPServer", "GenericTCPServer", "GenericServerFactory",
-           "Dummy", "Button", "Text", "buttons"]
+           "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton"]
