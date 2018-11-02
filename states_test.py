@@ -14,6 +14,7 @@ class StateBt(Button):
         self.hov_image.fill(hov_color)
 
     def on_click_start(self, event):
+        print ("II")
         game.update_state(self.state)
 
     def on_click_end(self, event):
@@ -42,7 +43,7 @@ class MyGame(Game):
         bt2image = pygame.Surface([100, 25]).convert()
         bt2image.fill([255, 255, 0])
         self.bt2 = StateBt(bt2image, (200, 200), "state2", (0, 255, 0))
-        self.check = CheckBox("Hello!")
+        self.check = CheckBox("Why do you do this?!")
         self.check.rect.center = (300, 300)
         self.running = True
 
@@ -69,7 +70,7 @@ class MyGame(Game):
         buttons.set_buttons([self.bt1,])
 
     def state2_to_state1(self):
-        buttons.set_buttons([self.bt2,])
+        buttons.set_buttons([self.bt2, self.check])
 
 
 if __name__ == "__main__":

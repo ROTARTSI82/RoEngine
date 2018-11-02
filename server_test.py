@@ -16,7 +16,7 @@ class CustomGame(Game):
 
         self.screen = pygame.display.set_mode([640, 480])
 
-        self.players = pygame.sprite.Group(PlatformerPlayer(pygame.Surface([15, 15]).convert_alpha()))
+        self.players = pygame.sprite.Group()
         self.COLLIDABLES = pygame.sprite.Group(DummySprite([100, 10], [100, 400]),
                                                DummySprite([100, 10], [150, 428]),
                                                DummySprite([10, 400], [250, 28]),
@@ -24,6 +24,7 @@ class CustomGame(Game):
                                                DummySprite([100, 100], [320, 405]))
 
         # self.proj = pygame.sprite.Group()
+        self.dummy = DummySprite([10, 10], [0, 0])
         for player in self.players: player.collidables = self.COLLIDABLES
         self.MAP = Map([1000, 1000])
         # self.markers = pygame.sprite.Group()
@@ -40,7 +41,7 @@ class CustomGame(Game):
             self.MAP.draw_sprite(player)
         # self.MAP.draw_group(self.proj)
         self.MAP.scale_to(self.screen, [2, 2])
-        scrollplayer = self.players.sprites()[0]
+        scrollplayer = self.players.sprites()[0] if self.players.sprites() else self.dummy
         self.MAP.get_scroll(scrollplayer.rect.center, self.screen,
                             [self.screen.get_width()/2, self.screen.get_height()/2], True, [True, False])
         self.MAP.blit_to(self.screen)
@@ -55,13 +56,13 @@ class CustomGame(Game):
             factory.send_pos_all()
             self.last_send_pos = time.time()
 
-        [player.update_rot(mp) for player in self.players]
+        #[player.update_rot(mp) for player in self.players]
         [player.check_bounds(self.MAP.get_map()) for player in self.players]
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.terminate()
-            [player.update_event(event) for player in self.players]
+            # [player.update_event(event) for player in self.players]
             # if event.type == pygame.MOUSEBUTTONDOWN:
             #    self.players.add(self.new_player())
             #    for player in self.players: player.collidables = self.COLLIDABLES
@@ -78,12 +79,19 @@ class CustomProtocol(GenericTCPServer):
     player = Dummy()
 
     def network_event(self, data):
-        event = pygame.event.Event(data['type'], data['dict'])
-        self.player.update_event(event)
+        for e in data['events']:
+            event = pygame.event.Event(e['type'], e['dict'])
+            # print "GOT EVENT", event
+            self.player.update_event(event)
+            try:
+                self.player.update_rot(event.pos)
+            except:
+                pass
 
     def send_pos(self):
-        dat = {"action": "players_at", "my_pos": self.player.rect.center,
-                   "players": [{"pos": i.rect.center, "rotation": i.rotation} for i in game.players]}
+        dat = {"action": "players_at", "my_pos": self.player.rect.center, "inp": self.player.input_state,
+                "players": [{"pos": i.rect.center, "rotation": i.rotation} for i in game.players]
+               }
         #print dat
         self.send(dat)
 
@@ -100,7 +108,7 @@ class CustomFactory(GenericServerFactory):
         else:
             print ("Game full. Kicking", addr)
             np.send({"action": "kick", "reason": "Game already full"})
-            return Dummy()
+            return np
 
         image = pygame.Surface([25, 25]).convert_alpha()
         image.fill([255, 0, 0])

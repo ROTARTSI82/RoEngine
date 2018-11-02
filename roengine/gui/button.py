@@ -88,7 +88,7 @@ class CheckButton(Button):
         self.image = pygame.Surface([size, size]).convert()
         self.image.fill([0, 0, 0])
 
-        self.inner = pygame.Surface([size-thickness*2, size-thickness*2])
+        self.inner = pygame.Surface([size-thickness*2, size-thickness*2]).convert()
         self.down, self.up = down, up
         self.inner.fill(down if clicked else up)
 
@@ -107,20 +107,31 @@ class CheckButton(Button):
 
 class CheckBox(Button):
     def __init__(self, text):
-        self.check_box = CheckButton()
+        self.check_box = CheckButton(size=15, thickness=2)
         self.clicked = self.check_box.clicked
         buttons.unregister(self.check_box)
         self.text = Text(text)
         self.dim = [self.check_box.image.get_width()+self.text.image.get_width()+20,
                     max(self.check_box.image.get_height(), self.text.image.get_height())+10]
         self.image = pygame.Surface(self.dim, SRCALPHA, 32).convert_alpha()
-        self.image.blit(self.text.image, [self.check_box.image.get_width()+10, 5])
-        self.image.blit(self.check_box.image, [3, 5])
+
+        self.check_box.rect.centery = self.dim[1]/2
+        self.check_box.rect.left = 5
+        self.text.rect.centery = self.dim[1] / 2
+        self.text.rect.left = self.check_box.rect.right + 5
+
+        self.image.blit(self.text.image, self.text.rect)
+        self.image.blit(self.check_box.image, self.check_box.rect)
         Button.__init__(self, self.image)
 
     def on_click_start(self, event):
         self.check_box.on_click_start(event)
         self.clicked = self.check_box.clicked
         self.image = pygame.Surface(self.dim, SRCALPHA, 32).convert_alpha()
-        self.image.blit(self.text.image, [self.check_box.image.get_width() + 10, 5])
-        self.image.blit(self.check_box.image, [3, 5])
+        self.check_box.rect.centery = self.dim[1] / 2
+        self.check_box.rect.left = 5
+        self.text.rect.centery = self.dim[1] / 2
+        self.text.rect.left = self.check_box.rect.right + 5
+
+        self.image.blit(self.text.image, self.text.rect)
+        self.image.blit(self.check_box.image, self.check_box.rect)

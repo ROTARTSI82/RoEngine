@@ -88,6 +88,6 @@ class Game(object):
 class DummySprite(pygame.sprite.Sprite):
     def __init__(self, size, pos):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface(size)
+        self.image = pygame.Surface(size).convert()
         self.rect = self.image.get_rect()
         self.rect.center = pos
