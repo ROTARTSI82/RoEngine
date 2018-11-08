@@ -7,31 +7,32 @@ from pygame.locals import *
 
 
 font_file = None
-text = pygame.compat.as_unicode(r"Hello world! \u2665!")
+text = pygame.compat.as_unicode(r"{}")
 pos = (250, 250)
 
 pygame.init()
 screen = pygame.display.set_mode([640, 480], RESIZABLE)
 
-font = pygame.freetype.Font(font_file, size=10, font_index=0, resolution=0, ucs4=False)
+font = pygame.freetype.Font(font_file, size=(10, 10), font_index=0, resolution=0, ucs4=False)
 font.antialiased = True
-font.vertical = True
-text = font.render(text, fgcolor=(0, 255, 0), bgcolor=(255, 0, 0), style=0, rotation=0, size=(48, 24))
+text = font.render(text, fgcolor=(0, 255, 0), bgcolor=(255, 0, 0), style=0, rotation=0, size=(256, 256))
 
 text = list(text)
 
 text[0] = text[0].convert()
 text[1].center = pos
 
-alpha = 0
+alpha = 255
 mode = "+"
 
 running = True
 while running:
     if mode == "+":
-        alpha += 1
+        #alpha += 1
+        pass
     else:
-        alpha -= 1
+        #alpha -= 1
+        pass
     if alpha > 255 and mode == "+":
         mode = "-"
     if alpha < 0 and mode == "-":
