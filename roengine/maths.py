@@ -92,6 +92,8 @@ def gcf(*args):
 
 
 def reduce_frac(num, dom):
+    if num == 0:
+        return 0, 1
     n1pf = prime_factorize(num)
     n2pf = prime_factorize(dom)
     n2Copy = n2pf[:]
@@ -108,10 +110,18 @@ def reduce_frac(num, dom):
     return num, dom
 
 
+def to_whole(a, b):
+    a = float(a)
+    b = float(b)
+    while not (int(a) == a and int(b) == b):
+        a *= 10
+        b *= 10
+    return int(a), int(b)
+
+
 class Fraction(object):
     def __init__(self, num, denom):
-        self.num = num
-        self.denom = denom
+        self.num, self.denom = to_whole(num, denom)
         self.decimal = num / float(denom)
         self.reduce()
 
@@ -136,7 +146,7 @@ class Fraction(object):
         self.num *= self_multiplier
         other.reduce()
         self.reduce()
-        return Fraction(other.num - self.num, lcmi)
+        return Fraction(self.num - other.num, lcmi)
 
     def __mul__(self, other):
         return Fraction(self.num * other.num, other.denom * self.denom)
