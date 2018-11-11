@@ -5,12 +5,17 @@ __all__ = ['factorize', 'gen_primes', 'is_prime', 'is_perfect', 'gen_perfect', '
 
 
 def factorize(n):
+    sign = "-" if n < 0 else "+"
     factors = [n, ]
-    for i in range(1, n+1):
+    if sign == "-":
+        factors.append(-n)
+    for i in range(1, abs(n)+1):
         if i in factors:
             break
-        if n / float(i) == int(n / float(i)):
+        if abs(n) % i == 0:
             factors.append(i)
+            if sign == '-':
+                factors.append(-i)
     return sorted(factors)
 
 
@@ -168,10 +173,10 @@ class MixedNumber(object):
             self.fraction = Fraction(0, 1) - self.fraction
 
     def to_improper(self):
-        print self
+        # print self
         self.fraction.num += self.whole * self.fraction.denom
         self.whole = 0
-        print self
+        # print self
 
     def reduce(self):
         frac = self.fraction + Fraction(self.whole, 1)
