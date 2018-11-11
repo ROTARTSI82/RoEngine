@@ -158,6 +158,76 @@ class Fraction(object):
         return self.__mul__(Fraction(other.denom, other.num))
 
 
+class MixedNumber(object):
+    def __init__(self, whole, num, denom, sign="+"):
+        self.fraction = Fraction(num, denom)
+        self.whole = whole
+        self.sign = sign
+        if sign == "-":
+            self.whole = -whole
+            self.fraction = Fraction(0, 1) - self.fraction
+
+    def to_improper(self):
+        print self
+        self.fraction.num += self.whole * self.fraction.denom
+        self.whole = 0
+        print self
+
+    def reduce(self):
+        frac = self.fraction + Fraction(self.whole, 1)
+
+        sign = "+"
+        if frac.decimal < 0:
+            sign = '-'
+        whole = abs(frac.num) / abs(frac.denom)
+        frac.num = abs(frac.num) % abs(frac.denom)
+        self.__init__(abs(whole), abs(frac.num), abs(frac.denom), sign)
+        return self
+
+    def __add__(self, other):
+        frac = other.fraction + self.fraction
+        whole = self.whole + other.whole
+        frac += Fraction(whole, 1)
+
+        sign = "+"
+        if frac.decimal < 0:
+            sign = '-'
+        whole = abs(frac.num) / abs(frac.denom)
+        frac.num = abs(frac.num) % abs(frac.denom)
+        return MixedNumber(abs(whole), abs(frac.num), abs(frac.denom), sign)
+
+    def __sub__(self, other):
+        frac = self.fraction - other.fraction
+        whole = self.whole - other.whole
+        frac += Fraction(whole, 1)
+
+        sign = "+"
+        if frac.decimal < 0:
+            sign = '-'
+        whole = abs(frac.num) / abs(frac.denom)
+        frac.num = abs(frac.num) % abs(frac.denom)
+        return MixedNumber(abs(whole), abs(frac.num), abs(frac.denom), sign)
+
+    def __mul__(self, other):
+        self.to_improper()
+        other.to_improper()
+        frac = self.fraction * other.fraction
+        res = MixedNumber(0, abs(frac.num), abs(frac.denom), "-" if frac.decimal < 0 else "+")
+        res.reduce()
+        return res
+
+    def __div__(self, other):
+        self.to_improper()
+        other.to_improper()
+        frac = self.fraction / other.fraction
+        res = MixedNumber(0, abs(frac.num), abs(frac.denom), "-" if frac.decimal < 0 else "+")
+        res.reduce()
+        return res
+
+    def __str__(self):
+        return "%s %s" % (self.whole, self.fraction)
+
+
 if __name__ == "__main__":
     while True:
         inp = raw_input(">>>")
