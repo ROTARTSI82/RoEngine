@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 __all__ = ['factorize', 'gen_primes', 'is_prime', 'is_perfect', 'gen_perfect', 'prime_factorize',
-           'lcm', 'gcf', 'reduce_frac', 'Fraction']
+           'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']
 
 
 def factorize(n):
@@ -171,12 +171,13 @@ class MixedNumber(object):
         if sign == "-":
             self.whole = -whole
             self.fraction = Fraction(0, 1) - self.fraction
+        self.reduce()
 
     def to_improper(self):
         # print self
         self.fraction.num += self.whole * self.fraction.denom
         self.whole = 0
-        # print self
+        return self
 
     def reduce(self):
         frac = self.fraction + Fraction(self.whole, 1)
@@ -186,7 +187,13 @@ class MixedNumber(object):
             sign = '-'
         whole = abs(frac.num) / abs(frac.denom)
         frac.num = abs(frac.num) % abs(frac.denom)
-        self.__init__(abs(whole), abs(frac.num), abs(frac.denom), sign)
+        # self.__init__(abs(whole), abs(frac.num), abs(frac.denom), sign)
+        self.fraction = Fraction(abs(frac.num), abs(frac.denom))
+        self.whole = abs(whole)
+        self.sign = sign
+        if sign == "-":
+            self.whole = -whole
+            self.fraction = Fraction(0, 1) - self.fraction
         return self
 
     def __add__(self, other):

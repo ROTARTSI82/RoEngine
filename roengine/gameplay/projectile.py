@@ -9,7 +9,7 @@ class Projectile(pygame.sprite.Sprite):
     def __init__(self, image, life, pos=(0, 0)):
         pygame.sprite.Sprite.__init__(self)
 
-        self.position = pygame.math.Vector2(0, 0)
+        self.position = pygame.math.Vector2(pos)
         self.velocity = pygame.math.Vector2(3, 3)
         self.rotation = 0
         self.speed = 3
@@ -33,7 +33,7 @@ class Projectile(pygame.sprite.Sprite):
         if time.time() >= self.life:
             self.kill()
 
-    def vel_from_rot(self):
+    def vel_from_rot(self):  # EXPERIMENTAL: DOESN'T WORK. >:(
         x = self.velocity.x * math.cos(self.rotation) - self.velocity.y * math.sin(self.rotation)
         y = self.velocity.x * math.sin(self.rotation) + self.velocity.y * math.cos(self.rotation)
         self.velocity = pygame.math.Vector2(x, y)

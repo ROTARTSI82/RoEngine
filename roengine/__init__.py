@@ -15,10 +15,10 @@ from .maths import *
 
 __all__ = ["Map", "DummySprite", "PlatformerPlayer", "Projectile", "GenericUDPClient", "GenericTCPClient", "Game",
            "GenericClientFactory", "reactor", "GenericUDPServer", "GenericTCPServer", "GenericServerFactory",
-           "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton"]
+           "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton", "Weapon", "bullets", "Bullet"]
 
 __extras__ = ['factorize', 'gen_primes', 'is_prime', 'is_perfect', 'gen_perfect', 'prime_factorize',
-              'lcm', 'gcf', 'reduce_frac', 'Fraction']
+              'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']
 
 # Uncomment to include extra functions
 # __all__.extend(__extras__)
