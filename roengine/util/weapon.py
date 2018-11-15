@@ -2,6 +2,7 @@
 
 import pygame
 import time
+import random
 
 from roengine.gameplay.projectile import Projectile
 
@@ -36,13 +37,17 @@ bullets = _BulletRegistry()
 
 
 class Bullet(Projectile):
-    def __init__(self, damage, target, parent):
-        Projectile.__init__(self, pygame.Surface([10, 10]).convert(), 5, parent.rect.center)
+    def __init__(self, damage, target, parent, wobble=(0, 0), blume=(1.25, 1.25), size=10, life=3):
+        Projectile.__init__(self, pygame.Surface([size, size]).convert(), life, parent.rect.center)
         self.parent = parent
         self.damage = damage
         self.target = target
         self.speed = 12
-        self.velocity = self.vel_to_target(self.target)
+        self.blume = blume
+        self.wobble = wobble
+        ablume = (random.uniform(-blume[0], blume[0]),
+                  random.uniform(-blume[1], blume[1]))
+        self.velocity = self.vel_to_target(self.target) + pygame.math.Vector2(ablume)
         # print (parent.rect.center)
 
     def on_collide(self, col_list):
@@ -53,6 +58,10 @@ class Bullet(Projectile):
                 return
 
     def update(self):
+        if self.wobble[0] != 0 or self.wobble[1] != 0:
+            wobble = (random.uniform(-self.wobble[0], self.wobble[0]),
+                      random.uniform(-self.wobble[1], self.wobble[1]))
+            self.velocity += pygame.math.Vector2(wobble)
         Projectile.update(self)
 
 
@@ -73,30 +82,60 @@ class Clock(object):
 
 
 class Weapon(object):
-    def __init__(self, dps, rof, bullet_class, parent, clockMode='accurate'):
+    def __init__(self, dps, rof, bullet_class, parent, mag=40, reserve=190, reload_time=2, blume=(0, 0)):
         self.dps = float(dps)
         self.rof = float(rof)
         self.cool = 1.0/rof
         self.lastFire = 0
         self.parent = parent
+
+        self.blume = blume
+
         self.bullet = bullet_class
-        self.clock = Clock() if clockMode == 'accurate' else pygame.time.Clock()
+        self.maxMag, self.ammo = mag, mag
+        self.reserve = reserve
+
+        self.clock = Clock()
         self.shot_damage = self.dps/rof
+
+        self.reloading = False
+        self.reload = reload_time
+        self.started_reloading = 0
         # damage per second / shots per second = damage per shot
 
     def tick(self):
-        self.clock.tick()
+        now = time.time()
+        if self.ammo <= 0 and self.reloading == False:
+            self.reloading = True
+            self.started_reloading = now
+        if self.reloading and now-self.started_reloading >= self.reload:
+            self.reloading = False
+            if self.reserve < self.maxMag:
+                self.ammo = self.reserve
+                self.reserve = 0
+            else:
+                self.reserve -= self.maxMag
+                self.ammo = self.maxMag
+        #self.clock.tick()
 
     def indp_fire(self, target_pos):
+        if self.reloading or self.ammo <= 0:
+            return
         self.clock.tick()
         rof = self.clock.get_fps()
         damage = self.dps / rof if rof != 0 else 0
         self._fire(damage, target_pos)
 
     def _fire(self, damage, target_pos):
+        target_pos = list(target_pos)
+        target_pos[0] += random.randint(-self.blume[0], self.blume[0])
+        target_pos[1] += random.randint(-self.blume[1], self.blume[1])
         bullets.register(self.bullet(damage, target_pos, self.parent))
+        self.ammo -= 1
 
-    def tick_fire(self, target_pos, recal_damage=False):
+    def tick_fire(self, target_pos, recal_damage=True):
+        if self.reloading or self.ammo <= 0:
+            return
         now = time.time()
         if now-self.lastFire > self.cool:
             if not recal_damage:

@@ -23,8 +23,8 @@ class G111218(Game):
 
     def start(self, *args, **kwargs):
 
-        DPS = 198
-        ROF = 5.5
+        DPS = 75
+        ROF = 10
 
         pygame.init()
 
@@ -41,7 +41,7 @@ class G111218(Game):
 
         bullets.set_shootables(self.SHOOTABLES)
 
-        self.weapon = Weapon(DPS, ROF, Bullet, self.player)
+        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 50, 500, 3.25)
         self.firing = False
 
         self.proj = pygame.sprite.Group()
@@ -60,11 +60,16 @@ class G111218(Game):
         self.MAP.get_scroll(self.player.rect.center, self.screen,
                             [self.screen.get_width()/2, self.screen.get_height()/2], True, [True, False])
         self.MAP.blit_to(self.screen)
+        ammo = Text("%s/%s"%(self.weapon.ammo, self.weapon.reserve), (100, 100))
+        sprites = Text(str(len(bullets._bullets)), (100, 50))
+        self.screen.blit(ammo.image, ammo.rect)
+        self.screen.blit(sprites.image,sprites.rect)
         self.player.update()
         mp = self.MAP.translate_pos(pygame.mouse.get_pos())
         self.player.update_rot(mp)
         self.player.check_bounds(self.MAP.get_map())
         bullets.update()
+        self.weapon.tick()
         pygame.display.flip()
         if self.firing:
             self.weapon.tick_fire(mp, True)
