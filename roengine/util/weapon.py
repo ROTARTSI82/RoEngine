@@ -6,7 +6,7 @@ import random
 
 from roengine.gameplay.projectile import Projectile
 
-__all__ = ["Weapon", "bullets", "Bullet"]
+__all__ = ["Weapon", "bullets", "Bullet", "Shotgun"]
 
 
 class _BulletRegistry(object):
@@ -37,7 +37,7 @@ bullets = _BulletRegistry()
 
 
 class Bullet(Projectile):
-    def __init__(self, damage, target, parent, wobble=(0, 0), blume=(1.25, 1.25), size=10, life=3):
+    def __init__(self, damage, target, parent, wobble=(0, 0), blume=(1.25, 1.25), size=10, life=2):
         Projectile.__init__(self, pygame.Surface([size, size]).convert(), life, parent.rect.center)
         self.parent = parent
         self.damage = damage
@@ -103,6 +103,13 @@ class Weapon(object):
         self.started_reloading = 0
         # damage per second / shots per second = damage per shot
 
+    def force_reload(self):
+        if self.ammo < self.maxMag:
+            self.reloading = True
+            self.started_reloading = time.time()
+        else:
+            print ("ERR: Magazine already full.")
+
     def tick(self):
         now = time.time()
         if self.ammo <= 0 and self.reloading == False:
@@ -113,9 +120,10 @@ class Weapon(object):
             if self.reserve < self.maxMag:
                 self.ammo = self.reserve
                 self.reserve = 0
-            else:
-                self.reserve -= self.maxMag
-                self.ammo = self.maxMag
+                return
+            s_reserve = self.maxMag-self.ammo
+            self.reserve -=  s_reserve if s_reserve >= 0 else 0
+            self.ammo = self.maxMag
         #self.clock.tick()
 
     def indp_fire(self, target_pos):
@@ -143,6 +151,20 @@ class Weapon(object):
             else:
                 self._fire(self.shot_damage, target_pos)
             self.lastFire = now
+
+
+class Shotgun(Weapon):
+    def __init__(self, dps, rof, bullet_class, parent, pellet_num=5, mag=8, reserve=200, reload_time=2, blume=(0, 0)):
+        self.pellet_num = pellet_num
+        Weapon.__init__(self, dps, rof, bullet_class, parent, mag, reserve, reload_time, blume)
+
+    def _fire(self, damage, target_pos):
+        for i in range(self.pellet_num):
+            target_pos = list(target_pos)
+            target_pos[0] += random.randint(-self.blume[0], self.blume[0])
+            target_pos[1] += random.randint(-self.blume[1], self.blume[1])
+            bullets.register(self.bullet(damage/float(self.pellet_num), target_pos, self.parent))
+        self.ammo -= 1
 
 
 if __name__ == "__main__":

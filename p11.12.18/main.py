@@ -23,8 +23,8 @@ class G111218(Game):
 
     def start(self, *args, **kwargs):
 
-        DPS = 75
-        ROF = 10
+        DPS = 111
+        ROF = 1.5
 
         pygame.init()
 
@@ -41,7 +41,7 @@ class G111218(Game):
 
         bullets.set_shootables(self.SHOOTABLES)
 
-        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 50, 500, 3.25)
+        self.weapon = Shotgun(DPS, ROF, Bullet, self.player, 5, 8, 200, 6.0)
         self.firing = False
 
         self.proj = pygame.sprite.Group()
@@ -81,6 +81,9 @@ class G111218(Game):
                 self.firing = True
             if event.type == pygame.MOUSEBUTTONUP:
                 self.firing = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    self.weapon.force_reload()
 
     def stop(self, *args, **kwargs):
         pygame.quit()
