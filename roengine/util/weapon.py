@@ -37,7 +37,7 @@ bullets = _BulletRegistry()
 
 
 class Bullet(Projectile):
-    def __init__(self, damage, target, parent, wobble=(0, 0), blume=(1.25, 1.25), size=10, life=2):
+    def __init__(self, damage, target, parent, wobble=(0, 0), blume=(1.0, 1.0), size=10, life=2):
         Projectile.__init__(self, pygame.Surface([size, size]).convert(), life, parent.rect.center)
         self.parent = parent
         self.damage = damage

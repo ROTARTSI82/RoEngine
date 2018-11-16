@@ -23,12 +23,12 @@ class G111218(Game):
 
     def start(self, *args, **kwargs):
 
-        DPS = 111
-        ROF = 1.5
+        DPS = 75
+        ROF = 8
 
         pygame.init()
 
-        self.screen = pygame.display.set_mode([640, 480])
+        self.screen = pygame.display.set_mode([640, 480], pygame.RESIZABLE)
 
         self.player = PlatformerPlayer(pygame.Surface([15, 15]).convert_alpha())
         self.COLLIDABLES = pygame.sprite.Group(DummySprite([100, 10], [100, 400]),
@@ -41,7 +41,7 @@ class G111218(Game):
 
         bullets.set_shootables(self.SHOOTABLES)
 
-        self.weapon = Shotgun(DPS, ROF, Bullet, self.player, 5, 8, 200, 6.0)
+        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, 500, 3.0)
         self.firing = False
 
         self.proj = pygame.sprite.Group()
@@ -55,11 +55,11 @@ class G111218(Game):
         self.MAP.draw_group(self.COLLIDABLES)
         self.MAP.draw_group(self.SHOOTABLES)
         self.MAP.draw_sprite(self.player)
-        self.MAP.scale_to(self.screen, [2, 2])
         bullets.draw(self.MAP)
+        self.MAP.scale_to(self.screen, [2, 2])
         self.MAP.get_scroll(self.player.rect.center, self.screen,
-                            [self.screen.get_width()/2, self.screen.get_height()/2], True, [True, False])
-        self.MAP.blit_to(self.screen)
+                            [self.screen.get_width()/2, self.screen.get_height()/2], [True, False])
+        self.screen.blit(self.MAP.scaled, self.MAP._scroll)
         ammo = Text("%s/%s"%(self.weapon.ammo, self.weapon.reserve), (100, 100))
         sprites = Text(str(len(bullets._bullets)), (100, 50))
         self.screen.blit(ammo.image, ammo.rect)
@@ -84,6 +84,8 @@ class G111218(Game):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     self.weapon.force_reload()
+            if event.type == pygame.VIDEORESIZE:
+                self.screen = pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
 
     def stop(self, *args, **kwargs):
         pygame.quit()
