@@ -17,7 +17,7 @@ from .maths import *
 __all__ = ["Map", "DummySprite", "PlatformerPlayer", "Projectile", "GenericUDPClient", "GenericTCPClient", "Game",
            "GenericClientFactory", "reactor", "GenericUDPServer", "GenericTCPServer", "GenericServerFactory",
            "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton", "Weapon", "bullets", "Bullet",
-           "Shotgun", "broken_x", "thick_arrow", "clickable"]
+           "Shotgun", "reticule", "thick_arrow", "clickable", "default", "reticule", "Action", "ActionManager"]
 
 __extras__ = ['factorize', 'gen_primes', 'is_prime', 'is_perfect', 'gen_perfect', 'prime_factorize',
               'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']

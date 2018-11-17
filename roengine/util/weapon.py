@@ -5,6 +5,7 @@ import time
 import random
 
 from roengine.gameplay.projectile import Projectile
+from roengine.util.action import Action, ActionManager
 
 __all__ = ["Weapon", "bullets", "Bullet", "Shotgun"]
 
@@ -111,7 +112,29 @@ class Clock(object):
         self.roc = self.get_fps()
 
 
+class _ReloadAction(Action):
+    def __init__(self, ac_type, ac_id, duration, parent):
+        Action.__init__(self, ac_type, ac_id, duration)
+        self.parent = parent
+
+    def start(self):
+        self.parent.reloading = True
+
+    def finish(self):
+        self.parent.reloading = False
+        if self.parent.reserve < self.parent.maxMag:
+            self.parent.ammo = self.parent.reserve
+            self.parent.reserve = 0
+            return
+        s_reserve = self.parent.maxMag - self.parent.ammo
+        self.parent.reserve -= s_reserve if s_reserve >= 0 else 0
+        self.parent.ammo = self.parent.maxMag
+
+
+
 class Weapon(object):
+    actionManager = ActionManager()
+
     def __init__(self, dps, rof, bullet_class, parent, mag=40, reserve=190, reload_time=2, blume=(0, 0)):
         self.dps = float(dps)
         self.rof = float(rof)
@@ -129,14 +152,13 @@ class Weapon(object):
         self.shot_damage = self.dps/rof
 
         self.reloading = False
-        self.reload = reload_time
-        self.started_reloading = 0
+        self.reload_action = _ReloadAction('weapon', 8, reload_time, self)
         # damage per second / shots per second = damage per shot
 
     def force_reload(self):
         if self.ammo < self.maxMag and not self.reloading:
-            self.reloading = True
-            self.started_reloading = time.time()
+            #print ("Activated Action")
+            self.actionManager.do_action(self.reload_action, True)
         else:
             if self.ammo >= self.maxMag:
                 return  # CASE: Magazine full
@@ -144,21 +166,12 @@ class Weapon(object):
                 return  # CASE: Already reloading
 
     def tick(self):
-        now = time.time()
         if self.reserve <= 0 and self.ammo <= 0:
             return  # CASE: No ammo.
         if self.ammo <= 0 and (not self.reloading):
-            self.reloading = True
-            self.started_reloading = now
-        if self.reloading and now-self.started_reloading >= self.reload:
-            self.reloading = False
-            if self.reserve < self.maxMag:
-                self.ammo = self.reserve
-                self.reserve = 0
-                return
-            s_reserve = self.maxMag-self.ammo
-            self.reserve -= s_reserve if s_reserve >= 0 else 0
-            self.ammo = self.maxMag
+            self.actionManager.do_action(self.reload_action, True)
+            #print ("Activated action")
+        self.actionManager.tick()
         #self.clock.tick()
 
     def indp_fire(self, target_pos):
@@ -224,7 +237,7 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode([640, 480])
     running = True
     counter = 0
-    damage =0
+    damage = 0
     while running:
         screen.fill([255, 255, 255])
         screen.blit(Text(str(counter)+":"+str(damage)).image, [10, 10])

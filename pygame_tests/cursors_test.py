@@ -43,7 +43,9 @@ class CursorsTest(Game):
         self.slider_xy = [(24, 16), (8, 8)] + list(pygame.cursors.compile(pygame.cursors.sizer_xy_strings))
         self.thick_arrow = [(24, 24), (2, 2)] + list(pygame.cursors.compile(pygame.cursors.thickarrow_strings))
 
-        pygame.mouse.set_cursor(*clickable)
+        pygame.cursors.broken_x = list(pygame.cursors.broken_x)
+        pygame.cursors.broken_x[1] = (8, 8)
+        pygame.mouse.set_cursor(*pygame.cursors.broken_x)
         self.running = True
         self.markers = pygame.sprite.Group()
         self.mdown = False

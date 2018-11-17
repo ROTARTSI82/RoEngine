@@ -3,6 +3,7 @@
 import pygame
 
 from roengine import *
+from roengine.util.action import ActionManager
 
 
 class DamageTracker(Text):
@@ -24,7 +25,7 @@ class G111218(Game):
 
     def start(self, *args, **kwargs):
 
-        DPS = 210
+        DPS = 75
         ROF = 10
 
         pygame.init()
@@ -43,7 +44,8 @@ class G111218(Game):
         bullets.set_shootables(self.SHOOTABLES)
         bullets.shootables.add(self.COLLIDABLES)
         bullets.set_bounds(self.MAP.get_map())
-
+        self.action_manager = ActionManager()
+        Weapon.actionManager = self.action_manager
         self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, 1000, 3.0)
         self.firing = False
 
@@ -51,7 +53,7 @@ class G111218(Game):
         self.player.collidables = self.COLLIDABLES
         self.MAP = Map([1000, 1000])
         self.running = True
-        pygame.mouse.set_cursor(*pygame.cursors.broken_x)
+        pygame.mouse.set_cursor(*reticule)
 
     def tick_main(self, *args, **kwargs):
         self.screen.fill([255, 255, 255])
@@ -68,6 +70,7 @@ class G111218(Game):
         sprites = Text(str(len(bullets._bullets)), (100, 50))
         self.screen.blit(ammo.image, ammo.rect)
         self.screen.blit(sprites.image,sprites.rect)
+        self.screen.blit(Text(str(self.action_manager.action_duration-self.action_manager.progress)).image, [0, 0])
         self.player.update()
         mp = self.MAP.translate_pos(pygame.mouse.get_pos())
         self.player.update_rot(mp)
