@@ -5,6 +5,7 @@ Defines [Dummy] and [Game]
 """
 
 import pygame
+import random
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
@@ -86,8 +87,12 @@ class Game(object):
 
 
 class DummySprite(pygame.sprite.Sprite):
+    refract_blume = [2.0, 2.0]
     def __init__(self, size, pos):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface(size).convert()
         self.rect = self.image.get_rect()
         self.rect.center = pos
+
+    def damage(self, damage, parent):
+        parent.req_kill()

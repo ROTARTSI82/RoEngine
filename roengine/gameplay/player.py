@@ -49,14 +49,14 @@ class PlatformerPlayer(pygame.sprite.Sprite):
                 self.input_state["forward"] = True
             if event.key == pygame.K_a:
                 self.input_state["backward"] = True
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE or event.key == pygame.K_w:
                 self.input_state["jump"] = True
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_d:
                 self.input_state["forward"] = False
             if event.key == pygame.K_a:
                 self.input_state["backward"] = False
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE or event.key == pygame.K_w:
                 self.input_state["jump"] = False
 
     def clamp_velocity(self):

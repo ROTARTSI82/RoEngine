@@ -10,8 +10,9 @@ class DamageTracker(Text):
         self.hp = 0
         Text.__init__(self, "0", pos)
 
-    def damage(self, damage):
+    def damage(self, damage, bullet):
         self.hp += damage
+        bullet.req_kill()
         Text.__init__(self, str(int(self.hp)), self.rect.center)
 
     def __str__(self):
@@ -23,8 +24,8 @@ class G111218(Game):
 
     def start(self, *args, **kwargs):
 
-        DPS = 75
-        ROF = 8
+        DPS = 210
+        ROF = 10
 
         pygame.init()
 
@@ -40,14 +41,17 @@ class G111218(Game):
         self.SHOOTABLES = pygame.sprite.Group(DamageTracker([200, 25]))
 
         bullets.set_shootables(self.SHOOTABLES)
+        bullets.shootables.add(self.COLLIDABLES)
+        bullets.set_bounds(self.MAP.get_map())
 
-        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, 500, 3.0)
+        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, 1000, 3.0)
         self.firing = False
 
         self.proj = pygame.sprite.Group()
         self.player.collidables = self.COLLIDABLES
         self.MAP = Map([1000, 1000])
         self.running = True
+        pygame.mouse.set_cursor(*pygame.cursors.broken_x)
 
     def tick_main(self, *args, **kwargs):
         self.screen.fill([255, 255, 255])
@@ -82,6 +86,12 @@ class G111218(Game):
             if event.type == pygame.MOUSEBUTTONUP:
                 self.firing = False
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_l:
+                    self.weapon.reserve = 1000
+                    # self.weapon.reload = 0.1
+                    self.SHOOTABLES = pygame.sprite.Group(DamageTracker([200, 25]))
+                    bullets.set_shootables(self.SHOOTABLES)
+                    bullets.shootables.add(self.COLLIDABLES)
                 if event.key == pygame.K_r:
                     self.weapon.force_reload()
             if event.type == pygame.VIDEORESIZE:

@@ -4,6 +4,17 @@ from pygame.locals import *
 from roengine import *
 
 
+class ClickableBt(CheckBox):
+    def __init__(self, text):
+        CheckBox.__init__(self, text)
+        self.hovering = False
+    def event_update(self, hovering):
+        if hovering and not self.hovering:
+            self.hovering = True
+            pygame.mouse.set_cursor(*clickable)
+        if (not hovering) and self.hovering:
+            self.hovering = False
+            pygame.mouse.set_cursor(*pygame.cursors.arrow)
 class StateBt(Button):
     def __init__(self, image, pos, state, hov_color):
         Button.__init__(self, image, pos)
@@ -12,6 +23,7 @@ class StateBt(Button):
         self.orig_image = image
         self.hov_image = pygame.Surface([110, 35]).convert()
         self.hov_image.fill(hov_color)
+        self.old_cursor = pygame.cursors.arrow
 
     def on_click_start(self, event):
         print ("II")
@@ -26,16 +38,20 @@ class StateBt(Button):
             orig_pos = self.rect.center
             self.rect = self.image.get_rect()
             self.rect.center = orig_pos
+            # self.old_cursor = pygame.mouse.get_cursor()
+            pygame.mouse.set_cursor(*clickable)
         if (not hovering) and self.image == self.hov_image:
             self.image = self.orig_image
             orig_pos = self.rect.center
             self.rect = self.image.get_rect()
             self.rect.center = orig_pos
+            pygame.mouse.set_cursor(*self.old_cursor)
 
 
 class MyGame(Game):
     def start(self):
         pygame.init()
+        pygame.mouse.set_cursor(*pygame.cursors.arrow)
         self.screen = pygame.display.set_mode([640, 480])
         bt1image = pygame.Surface([100, 25]).convert()
         bt1image.fill([255, 0, 0])
@@ -43,7 +59,7 @@ class MyGame(Game):
         bt2image = pygame.Surface([100, 25]).convert()
         bt2image.fill([255, 255, 0])
         self.bt2 = StateBt(bt2image, (200, 200), "state2", (0, 255, 0))
-        self.check = CheckBox("Why do you do this?!")
+        self.check = ClickableBt("Why do you do this?!")
         self.check.rect.center = (300, 300)
         self.running = True
 

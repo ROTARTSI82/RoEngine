@@ -13,12 +13,21 @@ class _BulletRegistry(object):
     def __init__(self):
         self.shootables = pygame.sprite.Group()
         self._bullets = pygame.sprite.Group()
+        self._bounds, self._checks = (0, 0), ()
 
     def set_shootables(self, group):
         self.shootables = group
 
+    def get_group(self):
+        return self._bullets
+
+    def set_bounds(self, bounds, checks=("+y", "-y", "+x", "-x")):
+        self._bounds = bounds
+        self._checks = checks
+
     def register(self, bullet):
         self._bullets.add(bullet)
+        bullet.set_bounds(self._bounds, self._checks)
 
     def unregister(self, bullet):
         self._bullets.remove(bullet)
@@ -37,32 +46,53 @@ bullets = _BulletRegistry()
 
 
 class Bullet(Projectile):
-    def __init__(self, damage, target, parent, wobble=(0, 0), blume=(1.0, 1.0), size=10, life=2):
+    def __init__(self, damage, target, parent, wobble=(0.0, 0.0), blume=(1.0, 1.0), size=10, life=2):
         Projectile.__init__(self, pygame.Surface([size, size]).convert(), life, parent.rect.center)
         self.parent = parent
         self.damage = damage
         self.target = target
         self.speed = 12
+        self.checks = ()
+        self.bounds = (0, 0)
         self.blume = blume
         self.wobble = wobble
         ablume = (random.uniform(-blume[0], blume[0]),
                   random.uniform(-blume[1], blume[1]))
         self.velocity = self.vel_to_target(self.target) + pygame.math.Vector2(ablume)
+        self.refract_blume = (0, 0)
         # print (parent.rect.center)
 
     def on_collide(self, col_list):
         for i in col_list:
             if i != self.parent:
-                i.damage(self.damage)
-                self.kill()
+                i.damage(self.damage, self)
+                # self.kill()
                 return
 
+    def req_kill(self):
+        self.kill()
+
     def update(self):
+        self.snap_rect()
+        if self.rect.left < 0 and "-x" in self.checks:
+            self.kill()
+        if self.rect.right > self.bounds[0] and "+x" in self.checks:
+            self.kill()
+
+        if self.rect.top < 0 and "-y" in self.checks:
+            self.kill()
+        if self.rect.bottom > self.bounds[1] and "+y" in self.checks:
+            self.kill()
+
         if self.wobble[0] != 0 or self.wobble[1] != 0:
             wobble = (random.uniform(-self.wobble[0], self.wobble[0]),
                       random.uniform(-self.wobble[1], self.wobble[1]))
             self.velocity += pygame.math.Vector2(wobble)
         Projectile.update(self)
+
+    def set_bounds(self, surface, checks=("+y", "-y", "+x", "-x")):
+        self.bounds = surface.get_size()
+        self.checks = checks
 
 
 class Clock(object):
@@ -104,15 +134,20 @@ class Weapon(object):
         # damage per second / shots per second = damage per shot
 
     def force_reload(self):
-        if self.ammo < self.maxMag:
+        if self.ammo < self.maxMag and not self.reloading:
             self.reloading = True
             self.started_reloading = time.time()
         else:
-            print ("ERR: Magazine already full.")
+            if self.ammo >= self.maxMag:
+                return  # CASE: Magazine full
+            if self.reloading:
+                return  # CASE: Already reloading
 
     def tick(self):
         now = time.time()
-        if self.ammo <= 0 and self.reloading == False:
+        if self.reserve <= 0 and self.ammo <= 0:
+            return  # CASE: No ammo.
+        if self.ammo <= 0 and (not self.reloading):
             self.reloading = True
             self.started_reloading = now
         if self.reloading and now-self.started_reloading >= self.reload:
@@ -122,19 +157,25 @@ class Weapon(object):
                 self.reserve = 0
                 return
             s_reserve = self.maxMag-self.ammo
-            self.reserve -=  s_reserve if s_reserve >= 0 else 0
+            self.reserve -= s_reserve if s_reserve >= 0 else 0
             self.ammo = self.maxMag
         #self.clock.tick()
 
     def indp_fire(self, target_pos):
-        if self.reloading or self.ammo <= 0:
-            return
+        if self.reserve > 0 and (self.reloading or self.ammo <= 0):
+            return  # CASE: Fire while reloading
+        elif self.reserve <= 0 and self.ammo <= 0:
+            return  # CASE: Fire with no ammo!
         self.clock.tick()
         rof = self.clock.get_fps()
         damage = self.dps / rof if rof != 0 else 0
         self._fire(damage, target_pos)
 
     def _fire(self, damage, target_pos):
+        if self.reserve > 0 and (self.reloading or self.ammo <= 0):
+            return  # CASE: Fire while reloading
+        elif self.reserve <= 0 and self.ammo <= 0:
+            return  # CASE: Fire with no ammo!
         target_pos = list(target_pos)
         target_pos[0] += random.randint(-self.blume[0], self.blume[0])
         target_pos[1] += random.randint(-self.blume[1], self.blume[1])
@@ -142,8 +183,6 @@ class Weapon(object):
         self.ammo -= 1
 
     def tick_fire(self, target_pos, recal_damage=True):
-        if self.reloading or self.ammo <= 0:
-            return
         now = time.time()
         if now-self.lastFire > self.cool:
             if not recal_damage:
@@ -159,6 +198,10 @@ class Shotgun(Weapon):
         Weapon.__init__(self, dps, rof, bullet_class, parent, mag, reserve, reload_time, blume)
 
     def _fire(self, damage, target_pos):
+        if self.reserve > 0 and (self.reloading or self.ammo <= 0):
+            return  # CASE: Fire while reloading
+        elif self.reserve <= 0 and self.ammo <= 0:
+            return  # CASE: Fire with no ammo!
         for i in range(self.pellet_num):
             target_pos = list(target_pos)
             target_pos[0] += random.randint(-self.blume[0], self.blume[0])
