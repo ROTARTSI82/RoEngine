@@ -43,7 +43,7 @@ class Map(object):
         return self._map
 
     def blit_to(self, surf):
-        surf.blit(self._map, self._scroll)
+        surf.blit(self.scaled, self._scroll)
 
     def translate_pos(self, pos):
         ret = [(pos[0] - self._scroll[0]) * self._map.get_width() / self.scaled.get_width(),

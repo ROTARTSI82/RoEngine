@@ -10,6 +10,8 @@ from twisted.internet.protocol import Protocol, ServerFactory, ClientFactory, co
 
 __all__ = ['GenericServerFactory', 'GenericTCPServer', 'GenericTCPClient', 'GenericClientFactory', 'reactor']
 
+## TODO
+# Maybe consider using PodSixNet.rencode? Is slower than marshal, but produces shorter string.
 load = marshal.loads
 dump = marshal.dumps
 
@@ -35,6 +37,7 @@ class GenericTCPServer(Protocol):
         :param data: "{'action': '...', ...}"
         :rtype: None
         """
+        # print ("[SERVER]", data)
         try:
             data = load(data)
             if hasattr(self, "network_" + data["action"]):
@@ -55,11 +58,15 @@ class GenericTCPServer(Protocol):
             self.send_que.append(message)
             print ("err:", "transport == None")
 
-    def connectionMade(self):
-        print ("emptying send que")
-        prev_send_que = self.send_que[:]
+    def enque(self, data):
+        self.send_que.append(data)
+
+    def empty_que(self):
+        self.send({"action": "que", "packs": self.send_que})
         self.send_que = []
-        [self.send(message) for message in prev_send_que]
+
+    def connectionMade(self):
+        self.empty_que()
 
     def send_to_all(self, message):
         """
@@ -85,6 +92,13 @@ class GenericTCPServer(Protocol):
     def shutdown(self):
         print ("shutdown called")
         self.transport.loseConnection()
+
+    def network_que(self, data):
+        print ("GOT QUE", data)
+        for packet in data['packs']:
+            print ("HANDLE", packet)
+            if hasattr(self, "network_" + packet["action"]):
+                eval("self.network_" + packet["action"])(packet)
 
 
 class GenericServerFactory(ServerFactory):
@@ -150,6 +164,12 @@ class GenericServerFactory(ServerFactory):
         """
         [protocol.send(message) for protocol in self.clients]
 
+    def empty_all(self):
+        [protocol.empty_que() for protocol in self.clients]
+
+    def enque_all(self, data):
+        [protocol.enque(data) for protocol in self.clients]
+
     def load(self):
         """
         Calls [reactor.listenTCP] according to [self.host] and [self.port]
@@ -185,12 +205,20 @@ class GenericTCPClient(Protocol):
         :param data: {"action": "...", ...}
         :rtype: None
         """
+        # print ("[CLIENT]", data)
         try:
             data = load(data)
             if hasattr(self, "network_" + data["action"]):
                 eval("self.network_" + data["action"])(data)
         except Exception as e:
             print ("err:", data, e)
+
+    def enque(self, data):
+        self.send_que.append(data)
+
+    def empty_que(self):
+        self.send({"action": "que", "packs": self.send_que})
+        self.send_que = []
 
     def send(self, message):
         """
@@ -214,9 +242,7 @@ class GenericTCPClient(Protocol):
         :rtype: None
         """
         print ("Emptying send_que...")
-        prev_send_que = self.send_que[:]
-        self.send_que = []
-        [self.send(message) for message in prev_send_que]
+        self.empty_que()
 
     def connectionLost(self, reason=connectionDone):
         """
@@ -240,6 +266,13 @@ class GenericTCPClient(Protocol):
         print ("Was kicked:", data['reason'])
         self.factory.shutdown()
 
+    def network_que(self, data):
+        print ("GOT QUE", data)
+        for packet in data['packs']:
+            print ("HANDLE", packet)
+            if hasattr(self, "network_" + packet["action"]):
+                eval("self.network_" + packet["action"])(packet)
+
     def shutdown(self):
         """
         Shutdown. Calls [self.transport.loseConnection]
@@ -251,6 +284,9 @@ class GenericTCPClient(Protocol):
 
     def network_ping(self, message):
         print ("PING")
+
+    def network_ping2(self, message):
+        print ("P2")
 
 
 class GenericClientFactory(ClientFactory):
@@ -297,7 +333,21 @@ class GenericClientFactory(ClientFactory):
         if self.protocol_instance is not None:
             self.protocol_instance.send(message)
         else:
-            reactor.callLater(retry, self.send, message)
+            reactor.callLater(retry, self.send, message, retry)
+            print ("err:", "self.protocol_instance == None")
+
+    def empty_all(self, retry=1):
+        if self.protocol_instance is not None:
+            self.protocol_instance.empty_que()
+        else:
+            reactor.callLater(retry, self.empty_all, retry)
+            print ("err:", "self.protocol_instance == None")
+
+    def enque_all(self, data, retry=1):
+        if self.protocol_instance is not None:
+            self.protocol_instance.enque(data)
+        else:
+            reactor.callLater(retry, self.empty_all, data, retry)
             print ("err:", "self.protocol_instance == None")
 
     def load(self):

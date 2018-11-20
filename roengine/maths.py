@@ -53,7 +53,7 @@ def prime_factorize(n):
         if is_prime(i):
             while n % i == 0:
                 pFactors.append(i)
-                n = n/float(i)
+                n /= float(i)
         i += 1
     return sorted(pFactors)
 
@@ -185,7 +185,7 @@ class MixedNumber(object):
         sign = "+"
         if frac.decimal < 0:
             sign = '-'
-        whole = abs(frac.num) / abs(frac.denom)
+        whole = abs(frac.num) // abs(frac.denom)
         frac.num = abs(frac.num) % abs(frac.denom)
         # self.__init__(abs(whole), abs(frac.num), abs(frac.denom), sign)
         self.fraction = Fraction(abs(frac.num), abs(frac.denom))
@@ -204,7 +204,7 @@ class MixedNumber(object):
         sign = "+"
         if frac.decimal < 0:
             sign = '-'
-        whole = abs(frac.num) / abs(frac.denom)
+        whole = abs(frac.num) // abs(frac.denom)
         frac.num = abs(frac.num) % abs(frac.denom)
         return MixedNumber(abs(whole), abs(frac.num), abs(frac.denom), sign)
 
@@ -216,7 +216,7 @@ class MixedNumber(object):
         sign = "+"
         if frac.decimal < 0:
             sign = '-'
-        whole = abs(frac.num) / abs(frac.denom)
+        whole = abs(frac.num) // abs(frac.denom)
         frac.num = abs(frac.num) % abs(frac.denom)
         return MixedNumber(abs(whole), abs(frac.num), abs(frac.denom), sign)
 

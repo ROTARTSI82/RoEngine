@@ -1,11 +1,13 @@
-from genericClasses.server_classes import GenericTCPServer, GenericServerFactory, reactor
+from roengine import GenericTCPServer, GenericServerFactory, reactor
 from twisted.internet.task import LoopingCall
 
 f = GenericServerFactory("127.0.0.1", 8000)
 
 
 def update():
-    f.send_to_all({"action": "ping"})
+    f.enque_all({"action": "ping"})
+    f.enque_all({"action": "ping2"})
+    f.empty_all()
 
 
 f.load()

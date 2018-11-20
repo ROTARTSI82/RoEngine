@@ -43,7 +43,7 @@ class CustomGame(Game):
         self.MAP.scale_to(self.screen, [2, 2])
         scrollplayer = self.players.sprites()[0] if self.players.sprites() else self.dummy
         self.MAP.get_scroll(scrollplayer.rect.center, self.screen,
-                            [self.screen.get_width()/2, self.screen.get_height()/2], True, [True, False])
+                            [self.screen.get_width()/2, self.screen.get_height()/2], [True, False])
         self.MAP.blit_to(self.screen)
         self.players.update()
         # self.proj.update()
@@ -101,8 +101,10 @@ class CustomFactory(GenericServerFactory):
 
     def buildProtocol(self, addr):
         print ("New client:", addr)
+
         np = ServerFactory.buildProtocol(self, addr)
         np.address = addr
+
         if len(self.clients) < self.max_clients:
             self.clients.append(np)
         else:

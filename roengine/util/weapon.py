@@ -120,6 +120,9 @@ class _ReloadAction(Action):
     def start(self):
         self.parent.reloading = True
 
+    def interrupted(self):
+        self.parent.reloading = False
+
     def finish(self):
         self.parent.reloading = False
         if self.parent.reserve < self.parent.maxMag:

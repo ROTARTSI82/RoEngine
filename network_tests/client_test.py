@@ -64,11 +64,11 @@ class CustomGame(Game):
         self.clock.tick(0)
         self.screen.fill([255, 255, 255])
         self.MAP.fill([255, 255, 255])
-        self.MAP.scale_to(self.screen, [2, 2])
         self.MAP.draw_group(self.players)
         self.MAP.draw_group(self.obstacles)
+        self.MAP.scale_to(self.screen, [2, 2])
         self.MAP.get_scroll(self.my_pos, self.screen,
-                            [self.screen.get_width() / 2, self.screen.get_height() / 2], True, [True, False])
+                            [self.screen.get_width() / 2, self.screen.get_height() / 2], [True, False])
         self.MAP.blit_to(self.screen)
         self.screen.blit(Text("Frame Rate: "+str(self.clock.get_fps()) + " fps").image, [10, 10])
         ping = factory.protocol_instance.tick_clock.get_fps() if factory.protocol_instance is not None else "Uninitiated"

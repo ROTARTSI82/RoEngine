@@ -14,7 +14,7 @@ class ClickableBt(CheckBox):
             pygame.mouse.set_cursor(*clickable)
         if (not hovering) and self.hovering:
             self.hovering = False
-            pygame.mouse.set_cursor(*pygame.cursors.arrow)
+            pygame.mouse.set_cursor(*default)
 class StateBt(Button):
     def __init__(self, image, pos, state, hov_color):
         Button.__init__(self, image, pos)
@@ -23,7 +23,7 @@ class StateBt(Button):
         self.orig_image = image
         self.hov_image = pygame.Surface([110, 35]).convert()
         self.hov_image.fill(hov_color)
-        self.old_cursor = pygame.cursors.arrow
+        self.old_cursor = default
 
     def on_click_start(self, event):
         print ("II")
@@ -45,13 +45,13 @@ class StateBt(Button):
             orig_pos = self.rect.center
             self.rect = self.image.get_rect()
             self.rect.center = orig_pos
-            pygame.mouse.set_cursor(*self.old_cursor)
+            pygame.mouse.set_cursor(*default)
 
 
 class MyGame(Game):
     def start(self):
         pygame.init()
-        pygame.mouse.set_cursor(*pygame.cursors.arrow)
+        pygame.mouse.set_cursor(*default)
         self.screen = pygame.display.set_mode([640, 480])
         bt1image = pygame.Surface([100, 25]).convert()
         bt1image.fill([255, 0, 0])

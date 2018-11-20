@@ -3,7 +3,7 @@
 import pygame
 
 from roengine import *
-from roengine.util.action import ActionManager
+from roengine.util.action import ActionManager, Action
 
 
 class DamageTracker(Text):
@@ -97,6 +97,8 @@ class G111218(Game):
                     bullets.shootables.add(self.COLLIDABLES)
                 if event.key == pygame.K_r:
                     self.weapon.force_reload()
+                if event.key == pygame.K_i:
+                    self.action_manager.do_action(Action("interrupt", -2, 0), True)
             if event.type == pygame.VIDEORESIZE:
                 self.screen = pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
 
