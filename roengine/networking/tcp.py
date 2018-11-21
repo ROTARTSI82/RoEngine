@@ -2,18 +2,15 @@
 
 from __future__ import print_function
 
-import marshal
-#from networking import rencode
+import roengine.crypt
 
 from twisted.internet import reactor
 from twisted.internet.protocol import Protocol, ServerFactory, ClientFactory, connectionDone
 
 __all__ = ['GenericServerFactory', 'GenericTCPServer', 'GenericTCPClient', 'GenericClientFactory', 'reactor']
 
-## TODO
-# Maybe consider using PodSixNet.rencode? Is slower than marshal, but produces shorter string.
-load = marshal.loads
-dump = marshal.dumps
+load = roengine.crypt.loads
+dump = roengine.crypt.dumps
 
 
 class GenericTCPServer(Protocol):
@@ -37,7 +34,7 @@ class GenericTCPServer(Protocol):
         :param data: "{'action': '...', ...}"
         :rtype: None
         """
-        # print ("[SERVER]", data)
+        print ("[CLIENT]", repr(data))
         try:
             data = load(data)
             if hasattr(self, "network_" + data["action"]):
@@ -205,7 +202,7 @@ class GenericTCPClient(Protocol):
         :param data: {"action": "...", ...}
         :rtype: None
         """
-        # print ("[CLIENT]", data)
+        # print ("[SERVER]", data)
         try:
             data = load(data)
             if hasattr(self, "network_" + data["action"]):

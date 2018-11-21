@@ -1,7 +1,14 @@
 # -*- coding: UTF-8 -*-
 
-__all__ = ['factorize', 'gen_primes', 'is_prime', 'is_perfect', 'gen_perfect', 'prime_factorize',
+import sys
+import itertools
+
+__all__ = ['factorize', 'is_prime', 'is_perfect', 'prime_factorize',
            'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']
+
+if sys.version_info.major == 3:
+    xrange = range
+    raw_input = input
 
 
 def factorize(n):
@@ -19,56 +26,29 @@ def factorize(n):
     return sorted(factors)
 
 
-def gen_primes(start, stop):
-    primes = []
-    for i in range(start, stop):
-        if is_prime(i):
-            primes.append(i)
-    return primes
-
-
-def is_prime(n):
-    return factorize(n) == [1, n]
-
-
 def is_perfect(n):
     fc = factorize(n)
     fc.remove(n)
     return sum(fc) == n
 
 
-def gen_perfect(start, stop):
-    perfects = []
-    for i in range(start, stop):
-        if is_perfect(i):
-            perfects.append(i)
-    return perfects
-
-
 def prime_factorize(n):
-    i = 2
-    pFactors = [] if n > -1 else [-1,]
-    n = abs(n)
-    while i <= n:
-        if is_prime(i):
-            while n % i == 0:
-                pFactors.append(i)
-                n /= float(i)
-        i += 1
-    return sorted(pFactors)
+    prime_factors = []
+    if n < 0:
+        prime_factors.append(-1)
+        n = abs(n)
+    for i in itertools.chain([2], itertools.count(3, 2)):
+        if n <= 1:
+            break
+        while n % i == 0:
+            n //= i
+            prime_factors.append(i)
+    return prime_factors
 
 
 def lcm(*args):
     if len(args) == 2:
-        n1pf = prime_factorize(args[0])
-        n2pf = prime_factorize(args[1])
-        for i in n2pf:
-            if i in n1pf:
-                n1pf.remove(i)
-        lcmi = 1
-        for i in n2pf + n1pf:
-            lcmi *= i
-        return lcmi
+        return args[0] * args[1] / float(gcf(*args))
     else:
         lcmi = args[0]
         for i in args:
@@ -77,23 +57,23 @@ def lcm(*args):
 
 
 def gcf(*args):
-    multList = []
+    args = list(args)
     if len(args) == 2:
-        n1pf = prime_factorize(args[0])
-        n2pf = prime_factorize(args[1])
-        for i in n2pf:
-            if i in n1pf:
-                n1pf.remove(i)
-                multList.append(i)
-        gcfi = 1
-        for i in multList:
-            gcfi *= i
-        return gcfi
+        while args[1] != 0:
+            args[0], args[1] = args[1], args[0] % args[1]
+        return args[0]
     else:
-        gcfi = args[0]
-        for i in args:
-            gcfi = gcf(gcfi, i)
-        return gcfi
+        igcf = args[0]
+        for i in args[1:]:
+            igcf = gcf(igcf, i)
+        return igcf
+
+
+def is_prime(n):
+    if n < 3 or n % 2 == 0:
+        return n == 2
+    else:
+        return not any(n % i == 0 for i in range(3, int(n ** 0.5 + 2), 2))
 
 
 def reduce_frac(num, dom):

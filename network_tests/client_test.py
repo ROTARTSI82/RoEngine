@@ -52,8 +52,7 @@ class CustomGame(Game):
         self.tick_clock = pygame.time.Clock()
         self.cool = 1.0/16
         self.last_tick = 0
-        self.event_que = [pygame.event.Event(pygame.MOUSEMOTION,
-                                             {"pos": self.MAP.translate_pos(pygame.mouse.get_pos())}), ]
+        self.event_que = []
         self.obstacles = pygame.sprite.Group(DummySprite([100, 10], [100, 400]),
                                                DummySprite([100, 10], [150, 428]),
                                                DummySprite([10, 400], [250, 28]),
@@ -77,18 +76,19 @@ class CustomGame(Game):
             self.inp['pos'] = pygame.mouse.get_pos()
         self.screen.blit(Text("Input State: "+ str(self.inp), size=16).image, [10, 50])
         pygame.display.flip()
-        if time.time()-self.last_tick > self.cool:
+        if time.time()-self.last_tick > self.cool and self.event_que:
             self.tick_clock.tick(0)
             # print self.event_que
             factory.send({"action": "event",
-                          "events": [{"type": event.type, "dict": event.dict} for event in self.event_que]})
-            self.event_que = [pygame.event.Event(pygame.MOUSEMOTION,
-                                                 {"pos": self.MAP.translate_pos(pygame.mouse.get_pos())}), ]
+                          "events": [event for event in self.event_que]})
+            self.event_que = []
 
         for event in pygame.event.get():
             if event.type in self.TYPELISTEN:
                 if event.key in self.LISTENFOR:
-                    self.event_que.append(event)
+                    self.event_que.append({"type": event.type, "dict": {"key": event.key}})
+            if event.type == pygame.MOUSEMOTION:
+                self.event_que.append({"type": pygame.MOUSEMOTION, "dict": {"pos": event.pos}})
             if event.type == pygame.QUIT:
                 self.terminate()
 

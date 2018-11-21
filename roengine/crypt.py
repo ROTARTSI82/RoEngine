@@ -1,3 +1,125 @@
+# -*- coding: UTF-8 -*-
+
+import random
+import struct
+import sys
+import hashlib
+
+from threading import Lock
+from roengine.maths import is_prime, gcf
+
+__all__ = ('dumps', 'loads', 'RSAGenerator', 'hexify_text', 'dehexify_text', 'hashes', 'single_str')
+
+
+def hexify_text(txt, pretty_print=True, prefix='0x'):
+    hlist = [hex(ord(i))[2:] for i in str(txt)]
+    return " ".join(hlist) if pretty_print else prefix + "".join(hlist)
+
+
+def dehexify_text(txt):
+    tlist = [chr(eval("0x"+txt[i:i+2])) for i in range(0, len(txt), 2)]
+    return "".join(tlist)
+
+
+def hashes(p):
+    p = str(p)
+    s512 = hashlib.sha512(p)
+    s384 = hashlib.sha384(p)
+    s256 = hashlib.sha256(p)
+    s224 = hashlib.sha224(p)
+    s1 = hashlib.sha1(p)
+    md5 = hashlib.md5(p)
+    return ((str(hash(p)), hexify_text(hash(p), False, "")), (s512.digest(), s512.hexdigest()),
+            (s384.digest(), s384.hexdigest()), (s256.digest(), s256.hexdigest()), (s224.digest(), s224.hexdigest()),
+            (s1.digest(), s1.hexdigest()), (md5.digest(), md5.hexdigest()))
+
+
+def single_str(p):
+    h = hashes(p)
+    ret = ""
+    for method in h:
+        ret += method[1]
+    return ret
+
+
+class RSAGenerator(object):
+    def __init__(self, p, q):
+        self.p, self.q = p, q
+        self.public, self.private = ((0, 0), (0, 0))
+        self.generate_keypair()
+
+    def encrypt(self, plaintext):
+        # Unpack the key into it's components
+        key, n = self.private
+        # Convert each letter in the plaintext to numbers based on the character using a^b mod m
+        cipher = [pow(ord(char), key, n) for char in plaintext]
+        # Return the array of bytes
+        return cipher
+
+    def decrypt(self, ciphertext):
+        # Unpack the key into its components
+        key, n = self.public
+        # Generate the plaintext based on the ciphertext and key using a^b mod m
+        plain = [chr(pow(char, key, n)) for char in ciphertext]
+        # Return the array of bytes as a string
+        return ''.join(plain)
+
+    def generate_keypair(self):
+        p, q = self.p, self.q
+        if not (is_prime(p) and is_prime(q)):
+            raise ValueError('Both numbers must be prime.')
+        elif p == q:
+            raise ValueError('p and q cannot be equal')
+        # n = pq
+        n = p * q
+
+        # Phi is the totient of n
+        phi = (p - 1) * (q - 1)
+
+        # Choose an integer e such that e and phi(n) are coprime
+        e = random.randrange(1, phi)
+
+        # Use Euclid's Algorithm to verify that e and phi(n) are comprime
+        g = gcf(e, phi)
+        while g != 1:
+            e = random.randrange(1, phi)
+            g = gcf(e, phi)
+
+        # Use Extended Euclid's Algorithm to generate the private key
+        d = multiplicative_inverse(e, phi)
+
+        # Return public and private keypair
+        # Public key is (e, n) and private key is (d, n)
+        self.public = (e, n)
+        self.private = (d, n)
+        return ((e, n), (d, n))
+
+
+def multiplicative_inverse(e, phi):
+    d = 0
+    x1 = 0
+    x2 = 1
+    y1 = 1
+    temp_phi = phi
+
+    while e > 0:
+        temp1 = temp_phi / e
+        temp2 = temp_phi - temp1 * e
+        temp_phi = e
+        e = temp2
+
+        x = x2 - temp1 * x1
+        y = d - temp1 * y1
+
+        x2 = x1
+        x1 = x
+        d = y1
+        y1 = y
+
+    if temp_phi == 1:
+        return d + phi
+
+
 # https://github.com/aresch/rencode
 #
 # This is tweaked to add native tuple type
@@ -45,30 +167,20 @@
 
 """
 rencode -- Web safe object pickling/unpickling.
-
 Public domain, Connelly Barnes 2006-2007.
-
 The rencode module is a modified version of bencode from the
 BitTorrent project.  For complex, heterogeneous data structures with
 many small elements, r-encodings take up significantly less space than
 b-encodings:
-
  >>> len(rencode.dumps({'a':0, 'b':[1,2], 'c':99}))
  13
  >>> len(bencode.bencode({'a':0, 'b':[1,2], 'c':99}))
  26
-
 The rencode format is not standardized, and may change with different
 rencode module versions, so you should check that you are using the
 same rencode version throughout your project.
 """
 
-import struct
-import sys
-from threading import Lock
-
-__version__ = ("Python", 1, 0, 5)
-__all__ = ('dumps', 'loads')
 
 py3 = sys.version_info[0] >= 3
 if py3:
@@ -443,7 +555,6 @@ lock = Lock()
 def dumps(x, float_bits=DEFAULT_FLOAT_BITS):
     """
     Dump data structure to str.
-
     Here float_bits is either 32 or 64.
     """
     with lock:
@@ -457,44 +568,9 @@ def dumps(x, float_bits=DEFAULT_FLOAT_BITS):
         encode_func[type(x)](x, r)
     return b''.join(r)
 
-
-def test():
-    f1 = struct.unpack('!f', struct.pack('!f', 25.5))[0]
-    f2 = struct.unpack('!f', struct.pack('!f', 29.3))[0]
-    f3 = struct.unpack('!f', struct.pack('!f', -0.6))[0]
-    ld = (({b'a': 15, b'bb': f1, b'ccc': f2, b'': (f3, (), False, True, b'')}, (b'a', 10**20),
-           tuple(range(-100000, 100000)), b'b' * 31, b'b' * 62, b'b' * 64, 2**30, 2**33, 2**62,
-           2**64, 2**30, 2**33, 2**62, 2**64, False, False, True, -1, 2, 0),)
-    assert loads(dumps(ld)) == ld
-    d = dict(zip(range(-100000, 100000), range(-100000, 100000)))
-    d.update({b'a': 20, 20: 40, 40: 41, f1: f2, f2: f3, f3: False, False: True, True: False})
-    ld = (d, {}, {5: 6}, {7: 7, True: 8}, {9: 10, 22: 39, 49: 50, 44: b''})
-    assert loads(dumps(ld)) == ld
-    ld = (b'', b'a' * 10, b'a' * 100, b'a' * 1000, b'a' * 10000, b'a' * 100000, b'a' * 1000000, b'a' * 10000000)
-    assert loads(dumps(ld)) == ld
-    ld = tuple([dict(zip(range(n), range(n))) for n in range(100)]) + (b'b',)
-    assert loads(dumps(ld)) == ld
-    ld = tuple([dict(zip(range(n), range(-n, 0))) for n in range(100)]) + (b'b',)
-    assert loads(dumps(ld)) == ld
-    ld = tuple([tuple(range(n)) for n in range(100)]) + (b'b',)
-    assert loads(dumps(ld)) == ld
-    ld = tuple([b'a' * n for n in range(1000)]) + (b'b',)
-    assert loads(dumps(ld)) == ld
-    ld = tuple([b'a' * n for n in range(1000)]) + (None, True, None)
-    assert loads(dumps(ld)) == ld
-    assert loads(dumps(None)) is None
-    assert loads(dumps({None: None})) == {None: None}
-    assert 1e-10 < abs(loads(dumps(1.1)) - 1.1) < 1e-6
-    assert 1e-10 < abs(loads(dumps(1.1, 32)) - 1.1) < 1e-6
-    assert abs(loads(dumps(1.1, 64)) - 1.1) < 1e-12
-    assert loads(dumps("Hello World!!"), decode_utf8=True)
 try:
     import psyco
     psyco.bind(dumps)
     psyco.bind(loads)
 except ImportError:
     pass
-
-
-if __name__ == '__main__':
-    test()

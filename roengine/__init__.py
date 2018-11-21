@@ -19,7 +19,7 @@ __all__ = ["Map", "DummySprite", "PlatformerPlayer", "Projectile", "GenericUDPCl
            "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton", "Weapon", "bullets", "Bullet",
            "Shotgun", "reticule", "thick_arrow", "clickable", "default", "reticule", "Action", "ActionManager"]
 
-__extras__ = ['factorize', 'gen_primes', 'is_prime', 'is_perfect', 'gen_perfect', 'prime_factorize',
+__extras__ = ['factorize', 'is_prime', 'is_perfect', 'prime_factorize',
               'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']
 
 # Uncomment to include extra functions

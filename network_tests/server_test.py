@@ -59,6 +59,7 @@ class CustomGame(Game):
         #[player.update_rot(mp) for player in self.players]
         [player.check_bounds(self.MAP.get_map()) for player in self.players]
         pygame.display.flip()
+        [client.tick_player() for client in factory.clients]
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.terminate()
@@ -78,15 +79,26 @@ class CustomGame(Game):
 class CustomProtocol(GenericTCPServer):
     player = Dummy()
 
+    def __init__(self):
+        GenericTCPServer.__init__(self)
+        self.looking = [0, 0]
+
     def network_event(self, data):
         for e in data['events']:
             event = pygame.event.Event(e['type'], e['dict'])
             # print "GOT EVENT", event
             self.player.update_event(event)
             try:
-                self.player.update_rot(event.pos)
-            except:
-                pass
+                self.looking = event.pos
+            except: pass
+
+    def tick_player(self):
+        old_scroll = game.MAP._scroll
+        scroll =game.MAP.get_scroll(self.player.rect.center, game.screen,
+                                    [game.screen.get_width()/2, game.screen.get_height()/2], [True, False])
+        looking = game.MAP.translate_pos(self.looking)
+        game.MAP._scroll = old_scroll
+        self.player.update_rot(looking)
 
     def send_pos(self):
         dat = {"action": "players_at", "my_pos": self.player.rect.center, "inp": self.player.input_state,

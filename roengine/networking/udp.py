@@ -2,16 +2,15 @@
 
 from __future__ import print_function
 
-import marshal
-#from networking import rencode
+import roengine.crypt
 
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
 
 __all__ = ['GenericUDPServer', 'GenericUDPClient', 'reactor']
 
-load = marshal.loads
-dump = marshal.dumps
+load = roengine.crypt.loads
+dump = roengine.crypt.dumps
 
 
 class GenericUDPServer(DatagramProtocol):
