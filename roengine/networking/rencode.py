@@ -1,124 +1,8 @@
 # -*- coding: UTF-8 -*-
-
-import random
-import struct
 import sys
-import hashlib
+import struct
 
 from threading import Lock
-from roengine.maths import is_prime, gcf
-
-__all__ = ('dumps', 'loads', 'RSAGenerator', 'hexify_text', 'dehexify_text', 'hashes', 'single_str')
-
-
-def hexify_text(txt, pretty_print=True, prefix='0x'):
-    hlist = [hex(ord(i))[2:] for i in str(txt)]
-    return " ".join(hlist) if pretty_print else prefix + "".join(hlist)
-
-
-def dehexify_text(txt):
-    tlist = [chr(eval("0x"+txt[i:i+2])) for i in range(0, len(txt), 2)]
-    return "".join(tlist)
-
-
-def hashes(p):
-    p = str(p)
-    s512 = hashlib.sha512(p)
-    s384 = hashlib.sha384(p)
-    s256 = hashlib.sha256(p)
-    s224 = hashlib.sha224(p)
-    s1 = hashlib.sha1(p)
-    md5 = hashlib.md5(p)
-    return ((str(hash(p)), hexify_text(hash(p), False, "")), (s512.digest(), s512.hexdigest()),
-            (s384.digest(), s384.hexdigest()), (s256.digest(), s256.hexdigest()), (s224.digest(), s224.hexdigest()),
-            (s1.digest(), s1.hexdigest()), (md5.digest(), md5.hexdigest()))
-
-
-def single_str(p):
-    h = hashes(p)
-    ret = ""
-    for method in h:
-        ret += method[1]
-    return ret
-
-
-class RSAGenerator(object):
-    def __init__(self, p, q):
-        self.p, self.q = p, q
-        self.public, self.private = ((0, 0), (0, 0))
-        self.generate_keypair()
-
-    def encrypt(self, plaintext):
-        # Unpack the key into it's components
-        key, n = self.private
-        # Convert each letter in the plaintext to numbers based on the character using a^b mod m
-        cipher = [pow(ord(char), key, n) for char in plaintext]
-        # Return the array of bytes
-        return cipher
-
-    def decrypt(self, ciphertext):
-        # Unpack the key into its components
-        key, n = self.public
-        # Generate the plaintext based on the ciphertext and key using a^b mod m
-        plain = [chr(pow(char, key, n)) for char in ciphertext]
-        # Return the array of bytes as a string
-        return ''.join(plain)
-
-    def generate_keypair(self):
-        p, q = self.p, self.q
-        if not (is_prime(p) and is_prime(q)):
-            raise ValueError('Both numbers must be prime.')
-        elif p == q:
-            raise ValueError('p and q cannot be equal')
-        # n = pq
-        n = p * q
-
-        # Phi is the totient of n
-        phi = (p - 1) * (q - 1)
-
-        # Choose an integer e such that e and phi(n) are coprime
-        e = random.randrange(1, phi)
-
-        # Use Euclid's Algorithm to verify that e and phi(n) are comprime
-        g = gcf(e, phi)
-        while g != 1:
-            e = random.randrange(1, phi)
-            g = gcf(e, phi)
-
-        # Use Extended Euclid's Algorithm to generate the private key
-        d = multiplicative_inverse(e, phi)
-
-        # Return public and private keypair
-        # Public key is (e, n) and private key is (d, n)
-        self.public = (e, n)
-        self.private = (d, n)
-        return ((e, n), (d, n))
-
-
-def multiplicative_inverse(e, phi):
-    d = 0
-    x1 = 0
-    x2 = 1
-    y1 = 1
-    temp_phi = phi
-
-    while e > 0:
-        temp1 = temp_phi / e
-        temp2 = temp_phi - temp1 * e
-        temp_phi = e
-        e = temp2
-
-        x = x2 - temp1 * x1
-        y = d - temp1 * y1
-
-        x2 = x1
-        x1 = x
-        d = y1
-        y1 = y
-
-    if temp_phi == 1:
-        return d + phi
-
 
 # https://github.com/aresch/rencode
 #
@@ -180,6 +64,8 @@ The rencode format is not standardized, and may change with different
 rencode module versions, so you should check that you are using the
 same rencode version throughout your project.
 """
+
+__all__ = ('loads', 'dumps')
 
 
 py3 = sys.version_info[0] >= 3

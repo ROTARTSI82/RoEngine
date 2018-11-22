@@ -2,15 +2,15 @@
 
 from __future__ import print_function
 
-import roengine.crypt
+import rencode
 
 from twisted.internet import reactor
 from twisted.internet.protocol import Protocol, ServerFactory, ClientFactory, connectionDone
 
 __all__ = ['GenericServerFactory', 'GenericTCPServer', 'GenericTCPClient', 'GenericClientFactory', 'reactor']
 
-load = roengine.crypt.loads
-dump = roengine.crypt.dumps
+load = rencode.loads
+dump = rencode.dumps
 
 
 class GenericTCPServer(Protocol):

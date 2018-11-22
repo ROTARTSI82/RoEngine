@@ -48,7 +48,7 @@ def prime_factorize(n):
 
 def lcm(*args):
     if len(args) == 2:
-        return args[0] * args[1] / float(gcf(*args))
+        return args[0] * args[1] // gcf(*args)
     else:
         lcmi = args[0]
         for i in args:
@@ -59,7 +59,7 @@ def lcm(*args):
 def gcf(*args):
     args = list(args)
     if len(args) == 2:
-        while args[1] != 0:
+        while args[1]:
             args[0], args[1] = args[1], args[0] % args[1]
         return args[0]
     else:
@@ -74,6 +74,13 @@ def is_prime(n):
         return n == 2
     else:
         return not any(n % i == 0 for i in range(3, int(n ** 0.5 + 2), 2))
+
+
+def are_relatively_prime(a, b):
+    for n in range(2, min(a, b) + 1):
+        if a % n == b % n == 0:
+            return False
+    return True
 
 
 def reduce_frac(num, dom):
