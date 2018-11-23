@@ -13,11 +13,13 @@ from .cursors import *
 
 # NOTE: The following imports are unused
 from .maths import *
+from .crypto import *
 
 __all__ = ["Map", "DummySprite", "PlatformerPlayer", "Projectile", "GenericUDPClient", "GenericTCPClient", "Game",
            "GenericClientFactory", "reactor", "GenericUDPServer", "GenericTCPServer", "GenericServerFactory",
            "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton", "Weapon", "bullets", "Bullet",
-           "Shotgun", "reticule", "thick_arrow", "clickable", "default", "reticule", "Action", "ActionManager"]
+           "Shotgun", "reticule", "thick_arrow", "clickable", "default", "reticule", "Action", "ActionManager",
+           "PopUp", "popups"]
 
 __extras__ = ['factorize', 'is_prime', 'is_perfect', 'prime_factorize',
               'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']

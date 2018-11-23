@@ -82,7 +82,7 @@ class RSAGenerator(object):
 
         # split(...) <--  Returns list. All elements of list are the same len, except for maybe the last one.
 
-        print [int(i, 0) for i in split(hexify_text(plaintext, False, ''), self.enc_len-1, '0x1')]
+        # print [int(i, 0) for i in split(hexify_text(plaintext, False, ''), self.enc_len-1, '0x1')]
 
         return [self.encrypt_n(int(i, 0))  # Loop through what `split` returns, interpret it as int, encrypt.
                 for i in split(hexify_text(plaintext, False, ''), self.enc_len-1, '0x1')]
@@ -109,9 +109,9 @@ class RSAGenerator(object):
 
     def generate_keypair(self):
         p, q = self.p, self.q
-        if not (is_prime(p) and is_prime(q)):
-            raise ValueError('Both numbers must be prime.')
-        elif p == q:
+        #if not (is_prime(p) and is_prime(q)):
+        #    raise ValueError('Both numbers must be prime.')
+        if p == q:
             raise ValueError('p and q cannot be equal')
         # n = pq
         n = p * q

@@ -5,6 +5,30 @@ import pygame
 from roengine import *
 from roengine.util.action import ActionManager, Action
 
+from roengine.gui.popup import *
+
+
+class TestPop(PopUp):
+    def __init__(self):
+        PopUp.__init__(self, 'main')
+        self.filter = pygame.Color(0, 0, 0, 128)
+
+    def tick_main(self, screen):
+        # screen.fill(self.filter)
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    popups.close()
+
+    def open(self):
+        print ("YAY! OPENED!")
+        self.is_open = True
+
+    def close(self, reason):
+        print ("CLOSED!", reason)
+        self.is_open = False
+
 
 class DamageTracker(Text):
     def __init__(self, pos):
@@ -40,9 +64,10 @@ class G111218(Game):
                                                DummySprite([100, 100], [320, 405]))
 
         self.SHOOTABLES = pygame.sprite.Group(DamageTracker([200, 25]))
+        self.SHOOTABLES.add(self.COLLIDABLES)
+        self.test_popup = TestPop()
 
         bullets.set_shootables(self.SHOOTABLES)
-        bullets.shootables.add(self.COLLIDABLES)
         bullets.set_bounds(self.MAP.get_map())
         self.action_manager = ActionManager()
         Weapon.actionManager = self.action_manager
@@ -77,6 +102,8 @@ class G111218(Game):
         self.player.check_bounds(self.MAP.get_map())
         bullets.update()
         self.weapon.tick()
+        if popups.tick(self.screen):
+            return
         pygame.display.flip()
         if self.firing:
             self.weapon.tick_fire(mp, True)
@@ -89,6 +116,8 @@ class G111218(Game):
             if event.type == pygame.MOUSEBUTTONUP:
                 self.firing = False
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_o:
+                    popups.open(self.test_popup)
                 if event.key == pygame.K_l:
                     self.weapon.reserve = 1000
                     # self.weapon.reload = 0.1
