@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 
 import pygame
+import time
+import random
 
 from roengine import *
 from roengine.util.action import ActionManager, Action
@@ -8,25 +10,80 @@ from roengine.util.action import ActionManager, Action
 from roengine.gui.popup import *
 
 
-class TestPop(PopUp):
+class Enemy(PlatformerPlayer):
     def __init__(self):
-        PopUp.__init__(self, 'main')
-        self.filter = pygame.Color(0, 0, 0, 128)
+        PlatformerPlayer.__init__(self, pygame.Surface([15, 15]))
+        self.image.fill([0, 255, 0])
+        self.last_att =0
+        self.at_cool = 1
+        self.speed = 3
 
-    def tick_main(self, screen):
-        # screen.fill(self.filter)
+    def damage(self, damage, bullet):
+        bullet.req_kill()
+        self.kill()
+        game.score += 1
+
+    def attack(self):
+        if time.time()-self.last_att > self.at_cool:
+            game.player.hp -= 1
+            self.last_att = time.time()
+
+    def update(self):
+        self.input_state = {"forward": False, "backward": False, "jump": True}
+        if game.player.rect.x > self.rect.x:
+            self.input_state['forward'] = True
+        elif game.player.rect.x < self.rect.x:
+            self.input_state['backward'] = True
+        PlatformerPlayer.update(self)
+
+
+class TestPop(PopUp):
+    def __init__(self, *args):
+        PopUp.__init__(self, *args)
+        self.filter = pygame.Surface([0, 0])
+        self.filter_color = pygame.Color(0, 0, 0, 128)
+        self.text = Text("GAME OVER!", [0, 0], None, 75, [255, 255, 255])
+
+    def tick_main(self):
+        global game
+        self.filter = pygame.Surface(game.screen.get_size(), pygame.SRCALPHA, 32).convert()
+        self.filter.fill(self.filter_color)
+        self.filter.set_alpha(200)
+        game.screen.blit(self.filter, [0,0])
+        game.hud._map = game.clear.copy()
+        game.hud.blit(self.text.image, [10, 10])
+        game.hud.blit(Text("Score: "+str(game.score), fg=[255, 255, 255], size=50).image, [100, 75])
+        game.hud.blit(Text("Hi: " + str(game.hi), fg=[255, 255, 255], size=50).image, [100, 125])
+        game.hud.scale_to(game.screen, [1, 1])
+        game.hud.blit_to(game.screen)
         pygame.display.flip()
-        for event in pygame.event.get():
+        if game.score > game.hi:
+            game.hi = game.score
+        for event in game.latest_events:
+            if event.type == pygame.QUIT:
+                game.terminate()
+            if event.type == pygame.VIDEORESIZE:
+                game.screen = pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if event.key == pygame.K_r:
+                    for e in game.enemies:
+                        game.SHOOTABLES.remove(e)
+                    game.enemies = pygame.sprite.Group()
                     popups.close()
+        if self.pause:
+            game.latest_events = []
 
     def open(self):
-        print ("YAY! OPENED!")
+        if game.score > game.hi:
+            game.hi = game.score
         self.is_open = True
 
     def close(self, reason):
-        print ("CLOSED!", reason)
+        game.score = 0
+        game.player.hp = 5
+        game.weapon.ammo = game.weapon.maxMag
+        game.weapon.reserve = 1000
+        game.player.position = pygame.math.Vector2(0, 0)
         self.is_open = False
 
 
@@ -44,6 +101,12 @@ class DamageTracker(Text):
         return str( self.rect.center)
 
 
+class Player(PlatformerPlayer):
+    def __init__(self, surf):
+        PlatformerPlayer.__init__(self, surf)
+        self.hp = 5
+
+
 class G111218(Game):
     screen, player, COLLIDABLES, MAP = [Dummy(), ] * 4
 
@@ -54,18 +117,24 @@ class G111218(Game):
 
         pygame.init()
 
-        self.screen = pygame.display.set_mode([640, 480], pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode([640, 480], pygame.RESIZABLE|pygame.SRCALPHA, 32)
+        self.hud = Map([640, 480])
+        # self.hud._map.set_colorkey([255, 0, 0])
+        self.clear = pygame.Surface([640, 480], pygame.SRCALPHA, 32).convert_alpha()
 
-        self.player = PlatformerPlayer(pygame.Surface([15, 15]).convert_alpha())
+        self.player = Player(pygame.Surface([15, 15]).convert_alpha())
+        self.player.image.fill([255, 0, 0])
         self.COLLIDABLES = pygame.sprite.Group(DummySprite([100, 10], [100, 400]),
                                                DummySprite([100, 10], [150, 428]),
                                                DummySprite([10, 400], [250, 28]),
                                                DummySprite([1920, 50], [320, 480]),
                                                DummySprite([100, 100], [320, 405]))
 
+        self.enemies = pygame.sprite.Group()
+
         self.SHOOTABLES = pygame.sprite.Group(DamageTracker([200, 25]))
         self.SHOOTABLES.add(self.COLLIDABLES)
-        self.test_popup = TestPop()
+        self.game_over = TestPop()
 
         bullets.set_shootables(self.SHOOTABLES)
         bullets.set_bounds(self.MAP.get_map())
@@ -73,41 +142,74 @@ class G111218(Game):
         Weapon.actionManager = self.action_manager
         self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, 1000, 3.0)
         self.firing = False
+        self.clock = pygame.time.Clock()
 
         self.proj = pygame.sprite.Group()
+        self.score = 0
+        self.hi = 0
         self.player.collidables = self.COLLIDABLES
         self.MAP = Map([1000, 1000])
         self.running = True
         pygame.mouse.set_cursor(*reticule)
 
+        self.last_enemy_spawned = time.time()
+        self.enemy_cooldown = 1
+
     def tick_main(self, *args, **kwargs):
+        self.clock.tick()
+        pygame.display.set_caption(str(self.clock.get_fps()))
         self.screen.fill([255, 255, 255])
         self.MAP.fill([255, 255, 255])
         self.MAP.draw_group(self.COLLIDABLES)
         self.MAP.draw_group(self.SHOOTABLES)
+        self.MAP.draw_group(self.enemies)
         self.MAP.draw_sprite(self.player)
         bullets.draw(self.MAP)
+        # pygame.draw.rect(self.MAP.get_map(), [0, 0, 0], self.player.rect, 1)
         self.MAP.scale_to(self.screen, [2, 2])
         self.MAP.get_scroll(self.player.rect.center, self.screen,
                             [self.screen.get_width()/2, self.screen.get_height()/2], [True, False])
         self.screen.blit(self.MAP.scaled, self.MAP._scroll)
-        ammo = Text("%s/%s"%(self.weapon.ammo, self.weapon.reserve), (100, 100))
-        sprites = Text(str(len(bullets._bullets)), (100, 50))
-        self.screen.blit(ammo.image, ammo.rect)
-        self.screen.blit(sprites.image,sprites.rect)
-        self.screen.blit(Text(str(self.action_manager.action_duration-self.action_manager.progress)).image, [0, 0])
+        ammo = Text("%s/%s"%(self.weapon.ammo, self.weapon.reserve), (100, 50), bg=(255, 255, 255))
+        sprites = Text("SCORE: "+str(self.score), (100, 30), bg=(255, 255, 255))
+        hp = Text("HEALTH: " + str(self.player.hp), (100, 10), bg=(255, 255, 255))
+        # self.hud.fill([255, 0, 0])
+        self.hud._map = self.clear.copy()
+        self.hud.blit(ammo.image, ammo.rect)
+        self.hud.blit(sprites.image,sprites.rect)
+        self.hud.blit(hp.image, hp.rect)
+        self.hud.blit(Text(str(self.action_manager.action_duration-self.action_manager.progress),
+                              bg=(255, 255, 255)).image, [320, 0])
+        self.hud.scale_to(self.screen, [1, 1])
+        self.hud.blit_to(self.screen)
         self.player.update()
+        self.enemies.update()
         mp = self.MAP.translate_pos(pygame.mouse.get_pos())
         self.player.update_rot(mp)
         self.player.check_bounds(self.MAP.get_map())
         bullets.update()
         self.weapon.tick()
-        if popups.tick(self.screen):
+        self.latest_events = pygame.event.get()
+        if time.time()-self.last_enemy_spawned > self.enemy_cooldown:
+            self.last_enemy_spawned = time.time()
+            ne = Enemy()
+            #ne.position = pygame.math.Vector2(random.randint(0, self.MAP._map.get_width()),
+            #                                  random.randint(0, self.MAP._map.get_height()))
+            ne.collidables = self.COLLIDABLES
+            self.enemies.add(ne)
+            self.SHOOTABLES.add(ne)
+        if popups.tick():
+            self.firing = False
+            self.player.input_state = {"forward": False, "backward": False, "jump": False}
             return
+        for i in pygame.sprite.spritecollide(self.player, self.enemies, False):
+            i.attack()
+        if self.player.hp <= 0:
+            popups.open(self.game_over)
         pygame.display.flip()
         if self.firing:
             self.weapon.tick_fire(mp, True)
-        for event in pygame.event.get():
+        for event in self.latest_events:
             if event.type == pygame.QUIT:
                 self.terminate()
             self.player.update_event(event)
@@ -116,14 +218,12 @@ class G111218(Game):
             if event.type == pygame.MOUSEBUTTONUP:
                 self.firing = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_o:
-                    popups.open(self.test_popup)
-                if event.key == pygame.K_l:
-                    self.weapon.reserve = 1000
+                # if event.key == pygame.K_l:
+                    # self.weapon.reserve = 1000
                     # self.weapon.reload = 0.1
-                    self.SHOOTABLES = pygame.sprite.Group(DamageTracker([200, 25]))
-                    bullets.set_shootables(self.SHOOTABLES)
-                    bullets.shootables.add(self.COLLIDABLES)
+                    # self.SHOOTABLES = pygame.sprite.Group(DamageTracker([200, 25]))
+                    # bullets.set_shootables(self.SHOOTABLES)
+                    # bullets.shootables.add(self.COLLIDABLES)
                 if event.key == pygame.K_r:
                     self.weapon.force_reload()
                 if event.key == pygame.K_i:

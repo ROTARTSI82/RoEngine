@@ -20,7 +20,7 @@ class _PopUpManager(object):
     def tick(self, *args):
         if self._current is not None:
             self._current.mtick(*args)
-            return True
+            return self._current.pause if self._current is not None else False
         return False
 
 
@@ -28,9 +28,10 @@ popups = _PopUpManager()
 
 
 class PopUp(object):
-    def __init__(self, state='main'):
+    def __init__(self, pause=True, state='main'):
         self._state = state
         self.is_open = False
+        self.pause = pause
 
     def open(self):
         self.is_open = True
