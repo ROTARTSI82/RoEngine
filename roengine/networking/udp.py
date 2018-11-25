@@ -54,7 +54,7 @@ class GenericUDPServer(DatagramProtocol):
 
         try:
             if hasattr(self, "network_" + message["action"]):
-                eval("self.network_" + message["action"])(message, address)
+                getattr(self, "network_" + message["action"])(message, address)
         except Exception as e:
             print ("err:", message, e)
 
@@ -166,7 +166,7 @@ class GenericUDPServer(DatagramProtocol):
         self.arrivals_confirmed[message['id']] = True
         try:
             if hasattr(self, "verified_" + message["data"]["action"]):
-                eval("self.verified_" + message["data"]["action"])(message, address)
+                getattr(self, "verified_" + message["data"]["action"])(message, address)
         except Exception as e:
             print ("err:", message, e)
 
@@ -223,7 +223,7 @@ class GenericUDPClient(DatagramProtocol):
 
         try:
             if hasattr(self, "network_" + message["action"]):
-                eval("self.network_" + message["action"])(message, address)
+                getattr(self, "network_" + message["action"])(message, address)
         except Exception as e:
             print("err:", message, e)
 
@@ -284,7 +284,7 @@ class GenericUDPClient(DatagramProtocol):
         self.arrivals_confirmed[message['id']] = True
         try:
             if hasattr(self, "verified_" + message["data"]["action"]):
-                eval("self.verified_" + message["data"]["action"])(message, address)
+                getattr(self, "verified_" + message["data"]["action"])(message, address)
         except Exception as e:
             print ("err:", message, e)
 

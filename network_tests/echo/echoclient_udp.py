@@ -48,7 +48,7 @@ class EchoClientDatagramProtocol(DatagramProtocol):
             self.connection_received = True
             return
         try:
-            markerpos = eval(datagram)
+            markerpos = [int(i.lstrip()) for i in datagram[1:-1].split(',')]
         except:
             pass
         #print "pos: ", markerpos

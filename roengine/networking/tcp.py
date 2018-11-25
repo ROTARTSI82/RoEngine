@@ -38,7 +38,7 @@ class GenericTCPServer(Protocol):
         try:
             data = load(data)
             if hasattr(self, "network_" + data["action"]):
-                eval("self.network_" + data["action"])(data)
+                getattr(self, "network_" + data["action"])(data)
         except Exception as e:
             print ("err:", data, e)
 
@@ -95,7 +95,7 @@ class GenericTCPServer(Protocol):
         for packet in data['packs']:
             print ("HANDLE", packet)
             if hasattr(self, "network_" + packet["action"]):
-                eval("self.network_" + packet["action"])(packet)
+                getattr(self, "network_" + packet["action"])(packet)
 
 
 class GenericServerFactory(ServerFactory):
@@ -206,7 +206,7 @@ class GenericTCPClient(Protocol):
         try:
             data = load(data)
             if hasattr(self, "network_" + data["action"]):
-                eval("self.network_" + data["action"])(data)
+                getattr(self, "network_" + data["action"])(data)
         except Exception as e:
             print ("err:", data, e)
 
@@ -268,7 +268,7 @@ class GenericTCPClient(Protocol):
         for packet in data['packs']:
             print ("HANDLE", packet)
             if hasattr(self, "network_" + packet["action"]):
-                eval("self.network_" + packet["action"])(packet)
+                getattr(self, "network_" + packet["action"])(packet)
 
     def shutdown(self):
         """

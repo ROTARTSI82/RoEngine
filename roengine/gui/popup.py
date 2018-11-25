@@ -50,7 +50,7 @@ class PopUp(object):
         oldstate = self._state[:]
         self._state = newstate
         if hasattr(self, "%s_to_%s" % (oldstate, newstate)):
-            eval("self.%s_to_%s" % (oldstate, newstate))()
+            getattr(self, "%s_to_%s" % (oldstate, newstate))()
         else:
             self.unhandled_update_state(oldstate, newstate)
 
@@ -58,6 +58,6 @@ class PopUp(object):
         if not self.is_open:
             return
         if hasattr(self, "tick_"+self._state):
-            eval("self.tick_" + self._state)(*args)
+            getattr(self, "tick_" + self._state)(*args)
         else:
             self.tick_arbitrary(self._state, args)

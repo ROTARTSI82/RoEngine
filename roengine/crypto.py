@@ -18,7 +18,7 @@ def hexify_text(txt, pretty_print=True, prefix='0x'):
 
 
 def dehexify_text(txt):
-    tlist = [chr(eval("0x"+txt[i:i+2])) for i in range(0, len(txt), 2)]
+    tlist = [chr(int("0x"+txt[i:i+2], 0)) for i in range(0, len(txt), 2)]
     return "".join(tlist)
 
 

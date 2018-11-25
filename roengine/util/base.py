@@ -55,7 +55,7 @@ class Game(object):
         if new == old_state: return
         self._state = new
         if hasattr(self, "%s_to_%s"%(old_state, new)):
-            eval("self.%s_to_%s"%(old_state, new))()
+            getattr(self, "%s_to_%s"%(old_state, new))()
         else:
             self.unhandled_update_state(old_state, new)
 
@@ -75,7 +75,7 @@ class Game(object):
     def _call_tick(self, *args, **kwargs):
         if self.running:
             if hasattr(self, "tick_"+self._state):
-                eval("self.tick_"+self._state)(*args, **kwargs)
+                getattr(self, "tick_"+self._state)(*args, **kwargs)
             else:
                 self.tick_arbitrary(self._state)
 

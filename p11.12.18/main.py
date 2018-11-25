@@ -140,7 +140,7 @@ class G111218(Game):
         bullets.set_bounds(self.MAP.get_map())
         self.action_manager = ActionManager()
         Weapon.actionManager = self.action_manager
-        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, 1000, 3.0)
+        self.weapon = Shotgun(DPS, 4, Bullet, self.player, 5, 30, 1000, 2.0)
         self.firing = False
         self.clock = pygame.time.Clock()
 
