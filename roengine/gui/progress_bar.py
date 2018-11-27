@@ -2,10 +2,10 @@
 
 import pygame
 
-__all__ = ["ProgessBar"]
+__all__ = ["ProgressBar"]
 
 
-class ProgessBar(pygame.sprite.Sprite):
+class ProgressBar(pygame.sprite.Sprite):
     def __init__(self, maxval, val, size, width, colors=((255, 0, 0), (0, 0, 0))):
         pygame.sprite.Sprite.__init__(self)
         self.max = maxval

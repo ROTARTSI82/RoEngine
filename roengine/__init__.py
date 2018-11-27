@@ -19,7 +19,7 @@ __all__ = ["Map", "DummySprite", "PlatformerPlayer", "Projectile", "GenericUDPCl
            "GenericClientFactory", "reactor", "GenericUDPServer", "GenericTCPServer", "GenericServerFactory",
            "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton", "Weapon", "bullets", "Bullet",
            "Shotgun", "reticule", "thick_arrow", "clickable", "default", "reticule", "Action", "ActionManager",
-           "PopUp", "popups", "ProgessBar"]
+           "PopUp", "popups", "ProgressBar"]
 
 __extras__ = ['factorize', 'is_prime', 'is_perfect', 'prime_factorize',
               'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']

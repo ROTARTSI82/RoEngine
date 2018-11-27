@@ -1,6 +1,6 @@
 from .text import *
 from .button import *
 from .popup import *
-from .progess_bar import *
+from .progress_bar import *
 
-__all__ = ['Text', 'Button', 'buttons', 'CheckBox', 'CheckButton', 'PopUp', 'popups', 'ProgessBar']
+__all__ = ['Text', 'Button', 'buttons', 'CheckBox', 'CheckButton', 'PopUp', 'popups', 'ProgressBar']

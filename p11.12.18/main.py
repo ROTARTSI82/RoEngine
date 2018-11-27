@@ -163,7 +163,7 @@ class G111218(Game):
                                                DummySprite([100, 100], [320, 405]))
 
         self.enemies = pygame.sprite.Group()
-        self.hp_bar = ProgessBar(110, self.player.hp, [500, 20], [2, 2], colors=((255, 0, 0), (128, 128, 128)))
+        self.hp_bar = ProgressBar(110, self.player.hp, [500, 20], [2, 2], colors=((255, 0, 0), (128, 128, 128)))
         self.hp_bar.rect.top = 10
         self.hp_bar.rect.centerx = 320
 
