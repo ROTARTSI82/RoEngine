@@ -2,6 +2,8 @@
 
 import random
 import hashlib
+import os
+import binascii
 
 from roengine.maths import is_prime, gcf
 
@@ -61,6 +63,38 @@ def single_str(p):
     return h
 
 
+HASH_METHOD = 'sha512'
+ROUNDS = 100000  # ~100,000 for sha256 as of 2013
+SALT_LEN = 16  # 16 or more from os.urandom()
+MAX_PASS = 1024
+LEN = 64  # 64 default for sha256
+
+
+def hmac(psw, method=HASH_METHOD, salt_len=SALT_LEN, iter=ROUNDS, length=LEN):
+    salt = os.urandom(salt_len)
+    return binascii.hexlify(hashlib.pbkdf2_hmac(method, psw, salt, iter, length)), salt
+
+
+def fixed_hmac(psw, salt, method=HASH_METHOD, iter=ROUNDS, length=LEN):
+    return binascii.hexlify(hashlib.pbkdf2_hmac(method, psw, salt, iter, length))
+
+
+def gen_acc(user, psw, userdict):
+    if user in userdict:
+        print ("Username already taken!")
+        return False
+    userdict[user] = hmac(psw)
+    return True
+
+
+def login(user, psw, userdict):
+    if user not in userdict:
+        print ("Invalid Username!")
+        return 0  # Returns int (not bool) but equates to False if interpreted as one.
+    return fixed_hmac(psw, userdict[user][1]) == userdict[user][0]  # Returns bool.
+    # One could see of the login function returned a 0 or False to determine if it's the wrong username or password.
+
+
 # BELOW IS A COMBINATION OF: https://gist.github.com/JonCooperWorks/5314103 and
 # http://code.activestate.com/recipes/578838-rsa-a-simple-and-easy-to-read-implementation/
 
@@ -99,7 +133,7 @@ class RSAGenerator(object):
         # return ''.join(plain)
 
         # get hex val of int, ignore first 3 bytes ('0x1') and interpret the rest as text.
-        print [hex(self.decrypt_n(i)).strip("L")[3:] for i in ciphertext]
+        # print ([hex(self.decrypt_n(i)).strip("L")[3:] for i in ciphertext])
         split_str = [hex(self.decrypt_n(i)).strip("L")[3:] for i in ciphertext]
         return dehexify_text("".join(split_str))
 

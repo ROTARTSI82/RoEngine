@@ -49,3 +49,8 @@ class Map(object):
         ret = [(pos[0] - self._scroll[0]) * self._map.get_width() / self.scaled.get_width(),
                (pos[1] - self._scroll[1]) * self._map.get_height() / self.scaled.get_height()]
         return ret
+
+    def get_pos(self, pos):
+        ret = [pos[0] * self.scaled.get_width() / self._map.get_width() + self._scroll[0],
+               pos[1] * self.scaled.get_height() / self._map.get_height() + self._scroll[1]]
+        return ret

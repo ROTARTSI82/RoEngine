@@ -193,8 +193,8 @@ class Weapon(object):
         elif self.reserve <= 0 and self.ammo <= 0:
             return  # CASE: Fire with no ammo!
         target_pos = list(target_pos)
-        target_pos[0] += random.randint(-self.blume[0], self.blume[0])
-        target_pos[1] += random.randint(-self.blume[1], self.blume[1])
+        target_pos[0] += random.uniform(-self.blume[0], self.blume[0])
+        target_pos[1] += random.uniform(-self.blume[1], self.blume[1])
         bullets.register(self.bullet(damage, target_pos, self.parent))
         self.ammo -= 1
 
