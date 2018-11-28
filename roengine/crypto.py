@@ -4,24 +4,12 @@ import random
 import hashlib
 import os
 import binascii
+import hmac as hmac_module
+import base64
 
 from roengine.maths import is_prime, gcf
 
-__all__ = ('RSAGenerator', 'hexify_text', 'dehexify_text', 'hashes', 'single_str')
-
-
-def hexify_text(txt, pretty_print=True, prefix='0x'):
-    hlist = []
-    for i in str(txt):
-        val = hex(ord(i))[2:]
-        val = "0" + val if len(val) < 2 else val
-        hlist.append(val)
-    return " ".join(hlist) if pretty_print else prefix + "".join(hlist)
-
-
-def dehexify_text(txt):
-    tlist = [chr(int("0x"+txt[i:i+2], 0)) for i in range(0, len(txt), 2)]
-    return "".join(tlist)
+__all__ = ('RSAGenerator', 'login', 'gen_acc', 'hmac')
 
 
 def split(txt, n, head):
@@ -37,32 +25,6 @@ def pad(txt, n, pt):
     return txt + append
 
 
-def hashes(p):
-    p = str(p)
-    s512 = hashlib.sha512(p)
-    s384 = hashlib.sha384(p)
-    s256 = hashlib.sha256(p)
-    s224 = hashlib.sha224(p)
-    s1 = hashlib.sha1(p)
-    md5 = hashlib.md5(p)
-    return ((s512.digest(), s512.hexdigest()), (s384.digest(), s384.hexdigest()), (s256.digest(), s256.hexdigest()),
-            (s224.digest(), s224.hexdigest()), (s1.digest(), s1.hexdigest()), (md5.digest(), md5.hexdigest()),
-            (str(hash(p)), hex(hash(p)).split('x')[1]))
-
-
-def single_str(p):
-    p = str(p)
-    s512 = hashlib.sha512(p)
-    s384 = hashlib.sha384(p)
-    s256 = hashlib.sha256(p)
-    s224 = hashlib.sha224(p)
-    s1 = hashlib.sha1(p)
-    md5 = hashlib.md5(p)
-    h = (s512.hexdigest(), s384.hexdigest(), s256.hexdigest(), s224.hexdigest(),
-         s1.hexdigest(), md5.hexdigest(), hex(hash(p)).split("0x")[1])
-    return h
-
-
 HASH_METHOD = 'sha512'
 ROUNDS = 100000  # ~100,000 for sha256 as of 2013
 SALT_LEN = 16  # 16 or more from os.urandom()
@@ -70,12 +32,15 @@ MAX_PASS = 1024
 LEN = 64  # 64 default for sha256
 
 
-def hmac(psw, method=HASH_METHOD, salt_len=SALT_LEN, iter=ROUNDS, length=LEN):
+def get_salt(userdict, salt_len=SALT_LEN):
     salt = os.urandom(salt_len)
-    return binascii.hexlify(hashlib.pbkdf2_hmac(method, psw, salt, iter, length)), salt
+    # salts = [i[1] for i in userdict.values()]
+    # while salt in salts:
+    #    salt = os.urandom(salt_len)
+    return salt
 
 
-def fixed_hmac(psw, salt, method=HASH_METHOD, iter=ROUNDS, length=LEN):
+def hmac(psw, salt, method=HASH_METHOD, iter=ROUNDS, length=LEN):
     return binascii.hexlify(hashlib.pbkdf2_hmac(method, psw, salt, iter, length))
 
 
@@ -83,7 +48,8 @@ def gen_acc(user, psw, userdict):
     if user in userdict:
         print ("Username already taken!")
         return False
-    userdict[user] = hmac(psw)
+    salt = get_salt(userdict)
+    userdict[user] = (hmac(psw, salt), salt)
     return True
 
 
@@ -91,12 +57,14 @@ def login(user, psw, userdict):
     if user not in userdict:
         print ("Invalid Username!")
         return 0  # Returns int (not bool) but equates to False if interpreted as one.
-    return fixed_hmac(psw, userdict[user][1]) == userdict[user][0]  # Returns bool.
-    # One could see of the login function returned a 0 or False to determine if it's the wrong username or password.
+    if hmac_module.compare_digest(hmac(psw, userdict[user][1]), userdict[user][0]):
+        return user
+    return False
 
 
 # BELOW IS A COMBINATION OF: https://gist.github.com/JonCooperWorks/5314103 and
 # http://code.activestate.com/recipes/578838-rsa-a-simple-and-easy-to-read-implementation/
+
 
 class RSAGenerator(object):
     def __init__(self, p, q, enc_len=8):
@@ -107,35 +75,47 @@ class RSAGenerator(object):
 
     def encrypt(self, plaintext):  # NOTE: Not secure in any way! Basically a Caesar Cipher
         key, n = self.public
-        # Convert each letter in the plaintext to numbers based on the character using a^b mod m
-        # cipher = [pow(ord(char), key, n) for char in plaintext]
-        # Return the array of bytes
-        # return cipher
 
-        # hexify_text(...) <-- Gets hex repr of str. Each byte is 2 hex chrs. Basically [hex(ord(i)) for i in txt]
-
+        # binascii.hexlify(...) <-- Gets hex repr of str. Each byte is 2 hex chrs. Basically [hex(ord(i)) for i in txt]
         # split(...) <--  Returns list. All elements of list are the same len, except for maybe the last one.
-
-        # print [int(i, 0) for i in split(hexify_text(plaintext, False, ''), self.enc_len-1, '0x1')]
+        # print [int(i, 0) for i in split(binascii.hexlify(plaintext, False, ''), self.enc_len-1, '0x1')]
 
         return [self.encrypt_n(int(i, 0))  # Loop through what `split` returns, interpret it as int, encrypt.
-                for i in split(hexify_text(plaintext, False, ''), self.enc_len-1, '0x1')]
+                for i in split(binascii.hexlify(plaintext), self.enc_len-1, '0x1')]
 
     def encrypt_n(self, num):
         key, n = self.public
         return pow(num, key, n)
 
-    def decrypt(self, ciphertext):  # NOTE: Not secure in any way! Basically a Caesar Cipher
+    def encrypt_p(self, key, clear, en_b64=True):
+        enc = []
+        for i in range(len(clear)):
+            key_c = key[i % len(key)]
+            enc_c = chr((ord(clear[i]) + ord(key_c)) % 256)
+            enc.append(enc_c)
+        enc = "".join(enc)
+        if en_b64:
+            enc = base64.urlsafe_b64encode(enc)
+        return self.encrypt(enc)
+
+    def decrypt_p(self, key, enc, en_b64=True):
+        enc = self.decrypt(enc)
+        dec = []
+        if en_b64:
+            enc = base64.urlsafe_b64decode(enc)
+        for i in range(len(enc)):
+            key_c = key[i % len(key)]
+            dec_c = chr((256 + ord(enc[i]) - ord(key_c)) % 256)
+            dec.append(dec_c)
+        return "".join(dec)
+
+    def decrypt(self, ciphertext):
         key, n = self.private
-        # Generate the plaintext based on the ciphertext and key using a^b mod m
-        # plain = [chr(pow(char, key, n)) for char in ciphertext]
-        # Return the array of bytes as a string
-        # return ''.join(plain)
 
         # get hex val of int, ignore first 3 bytes ('0x1') and interpret the rest as text.
         # print ([hex(self.decrypt_n(i)).strip("L")[3:] for i in ciphertext])
         split_str = [hex(self.decrypt_n(i)).strip("L")[3:] for i in ciphertext]
-        return dehexify_text("".join(split_str))
+        return binascii.unhexlify("".join(split_str))
 
     def decrypt_n(self, num):
         key, n = self.private
@@ -147,26 +127,17 @@ class RSAGenerator(object):
         #    raise ValueError('Both numbers must be prime.')
         if p == q:
             raise ValueError('p and q cannot be equal')
-        # n = pq
         n = p * q
-
-        # Phi is the totient of n
         phi = (p - 1) * (q - 1)
-
-        # Choose an integer e such that e and phi(n) are coprime
         e = random.randrange(1, phi)
 
-        # Use Euclid's Algorithm to verify that e and phi(n) are comprime
         g = gcf(e, phi)
         while g != 1:
             e = random.randrange(1, phi)
             g = gcf(e, phi)
 
-        # Use Extended Euclid's Algorithm to generate the private key
         d = multiplicative_inverse(e, phi)
 
-        # Return public and private keypair
-        # Public key is (e, n) and private key is (d, n)
         self.private = (d, n)
         self.public = (e, n)
         return (e, n), (d, n)
