@@ -6,10 +6,19 @@ import os
 import binascii
 import hmac as hmac_module
 import base64
+import subprocess
 
 from roengine.maths import is_prime, gcf
 
-__all__ = ('RSAGenerator', 'login', 'gen_acc', 'hmac')
+__all__ = ('RSAGenerator', 'hmac', 'User', 'AccountManager', 'is_prime_openssl')
+
+
+SHOW_PASSDUMP = True
+HASH_METHOD = 'sha512'
+ROUNDS = 100000  # ~100,000 for sha256 as of 2013
+SALT_LEN = 16  # 16 or more from os.urandom()
+MAX_PASS = 1024
+LEN = 64  # 64 default for sha256
 
 
 def split(txt, n, head):
@@ -25,18 +34,82 @@ def pad(txt, n, pt):
     return txt + append
 
 
-HASH_METHOD = 'sha512'
-ROUNDS = 100000  # ~100,000 for sha256 as of 2013
-SALT_LEN = 16  # 16 or more from os.urandom()
-MAX_PASS = 1024
-LEN = 64  # 64 default for sha256
+class AccountManager(object):
+    def __init__(self, hash_method='sha512', salt_len=16, hash_len=64, rounds=100000):
+        self.method = hash_method
+        self.salt_len = salt_len
+        self.hash_len = hash_len
+        self.iter = rounds
+        self.users = {}
+
+    def make_guest_account(self):
+        self.new_acc("Guest", "guest123")
+        dummy_user = User(self)
+        dummy_user.write_data("Hello World! This is the Guest account. Please sign in.")
+
+    def read(self, user, psw):
+        if user not in self.users:
+            return False
+        rsa = RSAGenerator(0, 0, 256, False)
+        rsa.public, rsa.private = self.users[user][3]
+        return rsa.decrypt_p(psw, self.users[user][2])
+
+    def write(self, dat, user, psw):
+        if user not in self.users:
+            return False
+        rsa = RSAGenerator(0, 0, 256, False)
+        rsa.public, rsa.private = self.users[user][3]
+        self.users[user][2] = rsa.encrypt_p(psw, dat)
+        return self.users[user]
+
+    def get_login(self, user, psw):
+        if user not in self.users:
+            print("Invalid Username!")
+            return 0  # Returns int (not bool) but equates to False if interpreted as one.
+        if hmac_module.compare_digest(hmac(psw, self.users[user][1]), self.users[user][0]):
+            return self.users[user]
+        return False
+
+    def new_acc(self, user, psw):
+        if user in self.users:
+            print("Username already taken!")
+            return False
+        salt = get_salt(self.users, self.salt_len)
+        current_primes = get_primes(salt)
+        current_rsa = RSAGenerator(current_primes[0], current_primes[1], 256)
+        self.users[user] = [hmac(psw, salt), salt,  [], [current_rsa.public, current_rsa.private]]
+        return True
+
+
+class User(object):
+    def __init__(self, acc_manager):
+        self.current_user = "Guest"
+        self.psw = "guest123"
+        self.acc_manager = acc_manager
+
+    def login(self, user, psw):
+        userdat = self.acc_manager.get_login(user, psw)
+        if userdat:
+            self.current_user = user
+            self.psw = psw
+        return userdat
+
+    def logout(self):
+        self.current_user = "Guest"
+        self.psw = "guest123"
+
+    def read_data(self):
+        return self.acc_manager.read(self.current_user, self.psw)
+
+    def write_data(self, data):
+        return self.acc_manager.write(data, self.current_user, self.psw)
 
 
 def get_salt(userdict, salt_len=SALT_LEN):
     salt = os.urandom(salt_len)
-    # salts = [i[1] for i in userdict.values()]
-    # while salt in salts:
-    #    salt = os.urandom(salt_len)
+    salts = [i[1] for i in userdict.values()]
+    while salt in salts:
+        salt = os.urandom(salt_len)
     return salt
 
 
@@ -44,34 +117,41 @@ def hmac(psw, salt, method=HASH_METHOD, iter=ROUNDS, length=LEN):
     return binascii.hexlify(hashlib.pbkdf2_hmac(method, psw, salt, iter, length))
 
 
-def gen_acc(user, psw, userdict):
-    if user in userdict:
-        print ("Username already taken!")
-        return False
-    salt = get_salt(userdict)
-    userdict[user] = (hmac(psw, salt), salt)
-    return True
+def wrap(minimum, maximum, val):
+    if minimum <= val <= maximum:
+        return val
+    while val > maximum:
+        val -= maximum + 1
+    while val < minimum:
+        val = maximum-(minimum-val) + 1
+    return val
 
 
-def login(user, psw, userdict):
-    if user not in userdict:
-        print ("Invalid Username!")
-        return 0  # Returns int (not bool) but equates to False if interpreted as one.
-    if hmac_module.compare_digest(hmac(psw, userdict[user][1]), userdict[user][0]):
-        return user
-    return False
+def is_prime_openssl(n):
+    return subprocess.check_output(['openssl', 'prime', str(n)]).endswith('is prime\n')
 
+
+def get_primes(salt, maximum=1024, minimum=512, power=2):
+    prime_start = pow(power, wrap(minimum, maximum, sum([ord(i) for i in salt])))
+    primes = []
+    while len(primes) < 2:
+        if is_prime_openssl(prime_start):
+            primes.append(prime_start)
+            # print (prime_start)
+        prime_start += 1
+    return primes
 
 # BELOW IS A COMBINATION OF: https://gist.github.com/JonCooperWorks/5314103 and
 # http://code.activestate.com/recipes/578838-rsa-a-simple-and-easy-to-read-implementation/
 
 
 class RSAGenerator(object):
-    def __init__(self, p, q, enc_len=8):
+    def __init__(self, p, q, enc_len=8, gen_keys=True):
         self.p, self.q = p, q
         self.enc_len = enc_len
         self.public, self.private = ((0, 0), (0, 0))
-        self.generate_keypair()
+        if gen_keys:
+            self.generate_keypair()
 
     def encrypt(self, plaintext):  # NOTE: Not secure in any way! Basically a Caesar Cipher
         key, n = self.public
