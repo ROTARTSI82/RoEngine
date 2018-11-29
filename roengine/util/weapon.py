@@ -60,8 +60,6 @@ class Bullet(Projectile):
         ablume = (random.uniform(-blume[0], blume[0]),
                   random.uniform(-blume[1], blume[1]))
         self.velocity = self.vel_to_target(self.target) + pygame.math.Vector2(ablume)
-        self.refract_blume = (0, 0)
-        # print (parent.rect.center)
 
     def on_collide(self, col_list):
         for i in col_list:
@@ -70,20 +68,17 @@ class Bullet(Projectile):
                 # self.kill()
                 return
 
-    def req_kill(self):
-        self.kill()
-
     def update(self):
         self.snap_rect()
         if self.rect.left < 0 and "-x" in self.checks:
-            self.kill()
+            self.req_kill()
         if self.rect.right > self.bounds[0] and "+x" in self.checks:
-            self.kill()
+            self.req_kill()
 
         if self.rect.top < 0 and "-y" in self.checks:
-            self.kill()
+            self.req_kill()
         if self.rect.bottom > self.bounds[1] and "+y" in self.checks:
-            self.kill()
+            self.req_kill()
 
         if self.wobble[0] != 0 or self.wobble[1] != 0:
             wobble = (random.uniform(-self.wobble[0], self.wobble[0]),
@@ -132,7 +127,6 @@ class _ReloadAction(Action):
         s_reserve = self.parent.maxMag - self.parent.ammo
         self.parent.reserve -= s_reserve if s_reserve >= 0 else 0
         self.parent.ammo = self.parent.maxMag
-
 
 
 class Weapon(object):

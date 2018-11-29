@@ -27,11 +27,14 @@ class Projectile(pygame.sprite.Sprite):
     def snap_pos(self):
         self.position = pygame.math.Vector2(self.rect.center)
 
+    def req_kill(self):
+        self.kill()
+
     def update(self):
         self.position += self.velocity
         self.snap_rect()
         if time.time() >= self.life:
-            self.kill()
+            self.req_kill()
 
     def vel_from_rot(self):  # EXPERIMENTAL: DOESN'T WORK. >:(
         x = self.velocity.x * math.cos(self.rotation) - self.velocity.y * math.sin(self.rotation)
