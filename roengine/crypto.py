@@ -191,7 +191,6 @@ class RSAGenerator(object):
 
     def decrypt(self, ciphertext):
         key, n = self.private
-
         # get hex val of int, ignore first 3 bytes ('0x1') and interpret the rest as text.
         # print ([hex(self.decrypt_n(i)).strip("L")[3:] for i in ciphertext])
         split_str = [hex(self.decrypt_n(i)).strip("L")[3:] for i in ciphertext]
@@ -203,6 +202,7 @@ class RSAGenerator(object):
 
     def generate_keypair(self):
         p, q = self.p, self.q
+        # I've chosen crazy big primes with openssl. Checking for primes would take too long, and is redundant.
         #if not (is_prime(p) and is_prime(q)):
         #    raise ValueError('Both numbers must be prime.')
         if p == q:

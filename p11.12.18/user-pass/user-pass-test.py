@@ -46,14 +46,28 @@ class AccountManager(object):
 
     def read(self, user, psw):
         if user not in self.users:
-            return False
+            return ""
         rsa = RSAGenerator(0, 0, 256, False)
         rsa.public, rsa.private = self.users[user][3]
         return rsa.decrypt_p(psw, self.users[user][2])
 
+    def dec(self, data, user, psw):
+        if user not in self.users:
+            return ""
+        rsa = RSAGenerator(0, 0, 256, False)
+        rsa.public, rsa.private = self.users[user][3]
+        return rsa.decrypt_p(psw, data)
+
+    def enc(self, dat, user, psw):
+        if user not in self.users:
+            return []
+        rsa = RSAGenerator(0, 0, 256, False)
+        rsa.public, rsa.private = self.users[user][3]
+        return rsa.encrypt_p(psw, dat)
+
     def write(self, dat, user, psw):
         if user not in self.users:
-            return False
+            return []
         rsa = RSAGenerator(0, 0, 256, False)
         rsa.public, rsa.private = self.users[user][3]
         self.users[user][2] = rsa.encrypt_p(psw, dat)
@@ -95,13 +109,19 @@ class User(object):
         self.current_user = "Guest"
         self.psw = "guest123"
 
-    def read_data(self):
+    def read_data(self, psw):
         # print (self.current_user, self.psw)
-        return self.acc_manager.read(self.current_user, self.psw)
+        return self.acc_manager.read(self.current_user, psw)
 
-    def write_data(self, data):
+    def enc_data(self, data, psw):
+        return self.acc_manager.enc(data, self.current_user, psw)
+
+    def dec_data(self, data, psw):
+        return self.acc_manager.dec(data, self.current_user, psw)
+
+    def write_data(self, data, psw):
         # print (self.current_user, self.psw)
-        return self.acc_manager.write(data, self.current_user, self.psw)
+        return self.acc_manager.write(data, self.current_user, psw)
 
 
 def get_salt(userdict, salt_len=SALT_LEN):
@@ -171,13 +191,22 @@ while True:
     command = raw_input(">? ").split(" ")
     if command[0] == "exit":
         break
+    if command[0] == 'encfile':
+        with open(command[1], 'r') as fp:
+            dat = com_user.enc_data(fp.read(), command[2])
+        with open(command[1]+'.encrypted', 'w') as fp:
+            marshal.dump(dat, fp)
+    if command[0] == 'readfile':
+        with open(command[1], 'r') as fp:
+            dat = marshal.load(fp)
+        print (com_user.dec_data(dat, command[2]))
     if command[0] == 'logout':
         com_user.logout()
     if command[0] == 'read':
-        print (com_user.read_data())
+        print (com_user.read_data(com_user.psw))
     if command[0] == 'write':
         try:
-            com_user.write_data(" ".join(command[1:]))
+            com_user.write_data(" ".join(command[1:]), com_user.psw)
             print ("Wrote:", " ".join(command[1:]))
         except IndexError:
             print ("Err: `write` take 1 param: [msg]")
