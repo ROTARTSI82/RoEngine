@@ -47,7 +47,7 @@ bullets = _BulletRegistry()
 
 
 class Bullet(Projectile):
-    def __init__(self, damage, target, parent, wobble=(0.0, 0.0), blume=(1.0, 1.0), size=10, life=2):
+    def __init__(self, damage, target, parent, blume=(1.0, 1.0), wobble=(0.0, 0.0), size=10, life=2):
         Projectile.__init__(self, pygame.Surface([size, size]).convert(), life, parent.rect.center)
         self.parent = parent
         self.damage = damage
@@ -186,10 +186,7 @@ class Weapon(object):
             return  # CASE: Fire while reloading
         elif self.reserve <= 0 and self.ammo <= 0:
             return  # CASE: Fire with no ammo!
-        target_pos = list(target_pos)
-        target_pos[0] += random.uniform(-self.blume[0], self.blume[0])
-        target_pos[1] += random.uniform(-self.blume[1], self.blume[1])
-        bullets.register(self.bullet(damage, target_pos, self.parent))
+        bullets.register(self.bullet(damage, target_pos, self.parent, self.blume))
         self.ammo -= 1
 
     def tick_fire(self, target_pos, recal_damage=True):
@@ -213,10 +210,7 @@ class Shotgun(Weapon):
         elif self.reserve <= 0 and self.ammo <= 0:
             return  # CASE: Fire with no ammo!
         for i in range(self.pellet_num):
-            target_pos = list(target_pos)
-            target_pos[0] += random.randint(-self.blume[0], self.blume[0])
-            target_pos[1] += random.randint(-self.blume[1], self.blume[1])
-            bullets.register(self.bullet(damage/float(self.pellet_num), target_pos, self.parent))
+            bullets.register(self.bullet(damage/float(self.pellet_num), target_pos, self.parent, self.blume))
         self.ammo -= 1
 
 

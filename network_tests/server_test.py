@@ -60,6 +60,7 @@ class CustomGame(Game):
         [player.check_bounds(self.MAP.get_map()) for player in self.players]
         pygame.display.flip()
         [client.tick_player() for client in factory.clients]
+        factory.empty_all()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.terminate()
@@ -105,7 +106,7 @@ class CustomProtocol(GenericTCPServer):
                 "players": [{"pos": i.rect.center, "rotation": i.rotation} for i in game.players]
                }
         #print dat
-        self.send(dat)
+        self.enque(dat)
 
 
 class CustomFactory(GenericServerFactory):
@@ -121,7 +122,7 @@ class CustomFactory(GenericServerFactory):
             self.clients.append(np)
         else:
             print ("Game full. Kicking", addr)
-            np.send({"action": "kick", "reason": "Game already full"})
+            np.enque({"action": "kick", "reason": "Game already full"})
             return np
 
         image = pygame.Surface([25, 25]).convert_alpha()

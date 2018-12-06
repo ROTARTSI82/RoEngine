@@ -79,10 +79,10 @@ class CustomGame(Game):
         if time.time()-self.last_tick > self.cool and self.event_que:
             self.tick_clock.tick(0)
             # print self.event_que
-            factory.send({"action": "event",
-                          "events": [event for event in self.event_que]})
+            factory.enque_all({"action": "event",
+                               "events": [event for event in self.event_que]})
             self.event_que = []
-
+        factory.empty_all()
         for event in pygame.event.get():
             if event.type in self.TYPELISTEN:
                 if event.key in self.LISTENFOR:

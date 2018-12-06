@@ -42,7 +42,7 @@ class AccountManager(object):
     def make_guest_account(self):
         self.new_acc("Guest", "guest123")
         dummy_user = User(self)
-        dummy_user.write_data("Hello World! This is the Guest account. Please sign in.")
+        dummy_user.write_data("Hello World! This is the Guest account. Please sign in.", "guest123"+("*"*16))
 
     def read(self, user, psw):
         if user not in self.users:
@@ -86,7 +86,7 @@ class AccountManager(object):
             print("Username already taken!")
             return False
         salt = get_salt(self.users, self.salt_len)
-        current_primes = get_primes(salt)
+        current_primes = get_primes(psw+salt)
         current_rsa = RSAGenerator(current_primes[0], current_primes[1], 256)
         self.users[user] = [hmac(psw, salt), salt,  [], [current_rsa.public, current_rsa.private]]
         return True
@@ -96,6 +96,7 @@ class User(object):
     def __init__(self, acc_manager):
         self.current_user = "Guest"
         self.psw = "guest123"
+        self.salt = "****************"
         self.acc_manager = acc_manager
 
     def login(self, user, psw):
@@ -103,11 +104,13 @@ class User(object):
         if userdat:
             self.current_user = user
             self.psw = psw
+            self.salt = userdat[1]
         return userdat
 
     def logout(self):
         self.current_user = "Guest"
         self.psw = "guest123"
+        self.salt = "****************"
 
     def read_data(self, psw):
         # print (self.current_user, self.psw)
@@ -203,11 +206,11 @@ while True:
     if command[0] == 'logout':
         com_user.logout()
     if command[0] == 'read':
-        print (com_user.read_data(com_user.psw))
+        print (com_user.read_data(command[1]))
     if command[0] == 'write':
         try:
-            com_user.write_data(" ".join(command[1:]), com_user.psw)
-            print ("Wrote:", " ".join(command[1:]))
+            com_user.write_data(" ".join(command[2:]), command[1])
+            print ("Wrote:", " ".join(command[2:]))
         except IndexError:
             print ("Err: `write` take 1 param: [msg]")
     if command[0] == 'login':
@@ -252,6 +255,9 @@ while True:
     if command[0] == 'myacc':
         print ('User:', com_user.current_user)
         print ('Password:', com_user.psw)
+        print ('Salt:', com_user.salt)
+        if my_acc_m.users.has_key(com_user.current_user):
+            print ('Encryption Keys:', my_acc_m.users[com_user.current_user][3])
     if command[0] == 'load':
         with open('users.dat') as fp:
             my_acc_m.users.update(marshal.load(fp))

@@ -37,12 +37,21 @@ class GenericTCPServer(Protocol):
         print ("[CLIENT]", repr(data))
         try:
             data = load(data)
-            if hasattr(self, "network_" + data["action"]):
-                getattr(self, "network_" + data["action"])(data)
+            for packet in data:
+                try:
+                    if hasattr(self, "network_" + packet["action"]):
+                        getattr(self, "network_" + packet["action"])(packet)
+                    else:
+                        raise Exception("No action")
+                except:
+                    self.arbitrary_packet(packet)
         except Exception as e:
             print ("err:", data, e)
 
-    def send(self, message):
+    def arbitrary_packet(self, pack):
+        print ("Unable to handle: ", pack)
+
+    def _send(self, message):
         """
         Send [message] to a single client.
 
@@ -59,22 +68,12 @@ class GenericTCPServer(Protocol):
         self.send_que.append(data)
 
     def empty_que(self):
-        self.send({"action": "que", "packs": self.send_que})
-        self.send_que = []
+        if self.send_que:
+            self._send(self.send_que)
+            self.send_que = []
 
     def connectionMade(self):
         self.empty_que()
-
-    def send_to_all(self, message):
-        """
-        Send [message] to all clients in [self.factory.clients]
-
-        NOTE: Do not use this. Use [GenericServerFactory.send_to_all] instead
-
-        :param message: {"action": "...", ...}
-        :rtype: None
-        """
-        [protocol.send(message) for protocol in self.factory.clients]
 
     def connectionLost(self, reason=connectionDone):
         """
@@ -89,13 +88,6 @@ class GenericTCPServer(Protocol):
     def shutdown(self):
         print ("shutdown called")
         self.transport.loseConnection()
-
-    def network_que(self, data):
-        print ("GOT QUE", data)
-        for packet in data['packs']:
-            print ("HANDLE", packet)
-            if hasattr(self, "network_" + packet["action"]):
-                getattr(self, "network_" + packet["action"])(packet)
 
 
 class GenericServerFactory(ServerFactory):
@@ -136,10 +128,10 @@ class GenericServerFactory(ServerFactory):
             self.clients.append(np)
         else:
             print ("Game full. Kicking", addr)
-            np.send({"action": "kick", "reason": "Game already full"})
+            np.enque({"action": "kick", "reason": "Game already full"})
         return np
 
-    def send(self, message, transport):
+    def _send(self, message, transport):
         """
         Write [message] to [transport]
 
@@ -151,15 +143,6 @@ class GenericServerFactory(ServerFactory):
             transport.write(dump(message))
         else:
             print ("err:", "transport == None")
-
-    def send_to_all(self, message):
-        """
-        Send message to all clients in [self.clients]
-
-        :param message: {"action": "...", ...}
-        :rtype: None
-        """
-        [protocol.send(message) for protocol in self.clients]
 
     def empty_all(self):
         [protocol.empty_que() for protocol in self.clients]
@@ -205,19 +188,29 @@ class GenericTCPClient(Protocol):
         # print ("[SERVER]", data)
         try:
             data = load(data)
-            if hasattr(self, "network_" + data["action"]):
-                getattr(self, "network_" + data["action"])(data)
+            for packet in data:
+                try:
+                    if hasattr(self, "network_" + packet["action"]):
+                        getattr(self, "network_" + packet["action"])(packet)
+                    else:
+                        raise Exception("No action")
+                except:
+                    self.arbitrary_packet(packet)
         except Exception as e:
-            print ("err:", data, e)
+            print("err:", data, e)
+
+    def arbitrary_packet(self, pack):
+        print ("Unable to handle: ", pack)
 
     def enque(self, data):
         self.send_que.append(data)
 
     def empty_que(self):
-        self.send({"action": "que", "packs": self.send_que})
-        self.send_que = []
+        if self.send_que:
+            self._send(self.send_que)
+            self.send_que = []
 
-    def send(self, message):
+    def _send(self, message):
         """
         Send [message] to the server
 
@@ -262,13 +255,6 @@ class GenericTCPClient(Protocol):
         """
         print ("Was kicked:", data['reason'])
         self.factory.shutdown()
-
-    def network_que(self, data):
-        print ("GOT QUE", data)
-        for packet in data['packs']:
-            print ("HANDLE", packet)
-            if hasattr(self, "network_" + packet["action"]):
-                getattr(self, "network_" + packet["action"])(packet)
 
     def shutdown(self):
         """
@@ -319,7 +305,7 @@ class GenericClientFactory(ClientFactory):
         self.protocol_instance.address = addr
         return self.protocol_instance
 
-    def send(self, message, retry=1):
+    def _send(self, message, retry=1):
         """
         Send [message] to server. If [self.protocol_instance] is [None], retry in [retry] seconds.
 
@@ -328,9 +314,9 @@ class GenericClientFactory(ClientFactory):
         :rtype: None
         """
         if self.protocol_instance is not None:
-            self.protocol_instance.send(message)
+            self.protocol_instance._send(message)
         else:
-            reactor.callLater(retry, self.send, message, retry)
+            reactor.callLater(retry, self._send, message, retry)
             print ("err:", "self.protocol_instance == None")
 
     def empty_all(self, retry=1):

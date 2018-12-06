@@ -9,8 +9,8 @@ from twisted.internet.protocol import DatagramProtocol
 
 __all__ = ['GenericUDPServer', 'GenericUDPClient', 'reactor']
 
-load = rencode
-dump = rencode
+load = rencode.loads
+dump = rencode.dumps
 
 
 class GenericUDPServer(DatagramProtocol):

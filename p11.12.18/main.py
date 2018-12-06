@@ -20,7 +20,7 @@ class Enemy(PlatformerPlayer):
         self.last_att =0
         self.shooter = random.choice(SHOOTER_CHANCES)
         if self.shooter:
-            self.weapon = Weapon(40, 2.75, Bullet, self, 20, 500, 3.25, (0.5, 0.5))
+            self.weapon = Weapon(40, 2.75, Bullet, self, 20, 500, 3.25, (2, 2))
             self.weapon.actionManager = ActionManager()
             self.image.fill([0, 0, 255])
         self.at_cool = 0.5
@@ -176,7 +176,7 @@ class G111218(Game):
         bullets.set_bounds(self.MAP.get_map())
         self.action_manager = ActionManager()
         Weapon.actionManager = self.action_manager
-        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, AMMO, 2.5 )
+        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, AMMO, 2.5, (1.5, 1.5))
         self.firing = False
         self.clock = pygame.time.Clock()
 
@@ -313,7 +313,7 @@ class G111218(Game):
 
 if __name__ == "__main__":
     AMMO = 500
-    SHOOTER_CHANCES = [True,] + [False,]*3
+    SHOOTER_CHANCES = [True,] + [False,]*5
     REGEN_RATE = 3
     MAX_ENEMIES = 10
     game = G111218()
