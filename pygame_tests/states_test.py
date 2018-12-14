@@ -8,6 +8,7 @@ class ClickableBt(CheckBox):
     def __init__(self, text):
         CheckBox.__init__(self, text)
         self.hovering = False
+
     def event_update(self, hovering):
         if hovering and not self.hovering:
             self.hovering = True
@@ -15,6 +16,8 @@ class ClickableBt(CheckBox):
         if (not hovering) and self.hovering:
             self.hovering = False
             pygame.mouse.set_cursor(*default)
+
+
 class StateBt(Button):
     def __init__(self, image, pos, state, hov_color):
         Button.__init__(self, image, pos)

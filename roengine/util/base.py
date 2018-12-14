@@ -54,6 +54,10 @@ class Game(object):
         old_state = self._state[:]
         if new == old_state: return
         self._state = new
+        if hasattr(self, 'exit_%s' %(old_state)):
+            getattr(self, 'exit_%s' % old_state)(new)
+        if hasattr(self, 'enter_%s' % (new)):
+            getattr(self, 'enter_%s' % new)(old_state)
         if hasattr(self, "%s_to_%s"%(old_state, new)):
             getattr(self, "%s_to_%s"%(old_state, new))()
         else:

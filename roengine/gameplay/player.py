@@ -19,6 +19,7 @@ class PlatformerPlayer(pygame.sprite.Sprite):
         self.jump_power = 10
         self.grounded = False
         self.term_y = 10
+        self.bounds = None
 
         self.input_state = {"forward": False, "backward": False, "jump": False}
 
@@ -30,6 +31,8 @@ class PlatformerPlayer(pygame.sprite.Sprite):
     def update(self):
         self.grounded = False
         self.check_y_collisions()
+        if self.bounds is not None:
+            self.check_bounds(self.bounds)
         self.update_input_state()
         self.apply_gravity()
         self.clamp_velocity()
@@ -120,6 +123,7 @@ class PlatformerPlayer(pygame.sprite.Sprite):
             self.rect.top = 0
             self.velocity.y = 0
         if self.rect.bottom > surface.get_height() and "+y" in checks:
-            self.rect.bottom = surface.get_width()
+            self.rect.bottom = surface.get_height()
             self.velocity.y = 0
+            self.grounded = True
         self.position = pygame.math.Vector2(self.rect.center)

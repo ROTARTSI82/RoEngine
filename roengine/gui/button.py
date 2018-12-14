@@ -6,7 +6,7 @@ from roengine.util import DummySprite
 from roengine.gui import Text
 from pygame.locals import *
 
-__all__ = ['Button', 'buttons', 'CheckBox', 'CheckButton']
+__all__ = ['Button', 'buttons', 'CheckBox', 'CheckButton', 'TextBt']
 
 
 class _ButtonRegistry(object):
@@ -135,3 +135,28 @@ class CheckBox(Button):
 
         self.image.blit(self.text.image, self.text.rect)
         self.image.blit(self.check_box.image, self.check_box.rect)
+
+
+class TextBt(Button):
+    def __init__(self, image, hover='txtAuto', pos=(0, 0), is_clickable=True, visible=True):
+        Button.__init__(self, image.image, pos, is_clickable, visible)
+        self.normal = image
+        self.hover_state = 'normal'
+        self.hover_img = hover
+        if hover == 'txtAuto':
+            self.hover_img = Text(image.text, image.pos, None, (image.size[0]*1.25, image.size[1]*1.25),
+                                  image.fg, (0, 0, 255))  # set bg to blue and make it bigger
+
+    def event_update(self, hovering):
+        if hovering and self.hover_state == 'normal':
+            self.hover_state = 'hovering'
+            old_pos = self.rect.center
+            self.image = self.hover_img.image.copy()
+            self.rect = self.image.get_rect()
+            self.rect.center = old_pos
+        if (not hovering) and self.hover_state == 'hovering':
+            self.hover_state = 'normal'
+            old_pos = self.rect.center
+            self.image = self.normal.image.copy()
+            self.rect = self.image.get_rect()
+            self.rect.center = old_pos

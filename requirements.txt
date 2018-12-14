@@ -4,7 +4,7 @@ constantly==15.1.0
 hyperlink==18.0.0
 idna==2.7
 incremental==17.5.0
-numpy==1.15.3
+numpy==1.15.4
 pygame==1.9.4
 PyHamcrest==1.9.0
 six==1.11.0

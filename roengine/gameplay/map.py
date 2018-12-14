@@ -2,6 +2,7 @@ import pygame
 
 __all__ = ["Map", ]
 
+
 class Map(object):
 
     def __init__(self, size):

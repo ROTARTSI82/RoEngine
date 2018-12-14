@@ -5,11 +5,16 @@ import time
 import math
 import random
 import os
+import logging
+import sys
+
+# from generic_logging import new_handlers
 
 from roengine import *
 from roengine.util.action import ActionManager, Action
 
 from roengine.gui.popup import *
+
 
 
 class Enemy(PlatformerPlayer):
@@ -20,7 +25,8 @@ class Enemy(PlatformerPlayer):
         self.last_att =0
         self.shooter = random.choice(SHOOTER_CHANCES)
         if self.shooter:
-            self.weapon = Weapon(40, 2.75, Bullet, self, 20, 500, 3.25, (2, 2))
+            self.weapon = Shotgun(75, 1.5, Bullet, None, 5, 12, float('inf'), 4.75, (1.5, 1.5))
+            self.weapon.parent=self
             self.weapon.actionManager = ActionManager()
             self.image.fill([0, 0, 255])
         self.at_cool = 0.5
@@ -36,11 +42,13 @@ class Enemy(PlatformerPlayer):
         self.hp -= damage
         bullet.req_kill()
         if self.hp <= 0:
+            logger.info("%s was killed. (is_shooter: %s)", self, self.shooter)
             #game.weapon.reserve += 10
             self.kill()
 
     def attack(self):
         if time.time()-self.last_att > self.at_cool:
+            logger.info('%s meleed player for 15 damage', self)
             game.player.hp -= 15
             game.hp_bar.val = game.player.hp
             game.hp_bar.update()
@@ -95,6 +103,7 @@ class TestPop(PopUp):
             game.latest_events = []
 
     def open(self):
+        logger.info("Game over! Saving high score...")
         if game.score > game.hi:
             game.hi = game.score
         with open("hi.txt", "w") as fp:
@@ -102,6 +111,7 @@ class TestPop(PopUp):
         self.is_open = True
 
     def close(self, reason):
+        logger.info("Restarting game...")
         game.last_enemy_spawned = time.time()
         game.score = 0
         game.player.hp = 100
@@ -133,6 +143,7 @@ class Player(PlatformerPlayer):
         self.hp = 100
 
     def damage(self, damage, bullet):
+        logger.info("%s damaged player for %s damage", bullet, damage)
         bullet.req_kill()
         self.hp -= damage
         game.hp_bar.val = self.hp
@@ -143,13 +154,14 @@ class G111218(Game):
     screen, player, COLLIDABLES, MAP = [Dummy(), ] * 4
 
     def start(self, *args, **kwargs):
+        logger.info("Initializing pygame...")
 
         DPS = 175
         ROF = 8
 
         pygame.init()
 
-        self.screen = pygame.display.set_mode([640, 480], pygame.RESIZABLE|pygame.SRCALPHA, 32)
+        self.screen = pygame.display.set_mode([640, 480], pygame.RESIZABLE | pygame.SRCALPHA, 32)
         self.hud = Map([640, 480])
         # self.hud._map.set_colorkey([255, 0, 0])
         self.clear = pygame.Surface([640, 480], pygame.SRCALPHA, 32).convert_alpha()
@@ -176,7 +188,8 @@ class G111218(Game):
         bullets.set_bounds(self.MAP.get_map())
         self.action_manager = ActionManager()
         Weapon.actionManager = self.action_manager
-        self.weapon = Weapon(DPS, ROF, Bullet, self.player, 40, AMMO, 2.5, (1.5, 1.5))
+        self.weapon = testwp
+        self.weapon.parent = self.player
         self.firing = False
         self.clock = pygame.time.Clock()
 
@@ -199,6 +212,7 @@ class G111218(Game):
 
         pygame.display.set_caption("The Great Red Sqaure: The Green Square's Revenge")
         pygame.display.set_icon(self.player.image)
+        logger.info("pygame initialized.")
 
     def tick_main(self, *args, **kwargs):
         global MAX_ENEMIES
@@ -257,6 +271,7 @@ class G111218(Game):
             #                                  random.randint(0, self.MAP._map.get_height()))
             ne.collidables = self.COLLIDABLES
             self.enemies.add(ne)
+            logger.info("Spawning new enemy... (is_shooter: %s)", ne.shooter)
             self.SHOOTABLES.add(ne)
         if popups.tick():
             self.firing = False
@@ -288,15 +303,11 @@ class G111218(Game):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_k:
                     self.player.hp = 0
-                # if event.key == pygame.K_l:
-                    # self.weapon.reserve = 1000
-                    # self.weapon.reload = 0.1
-                    # self.SHOOTABLES = pygame.sprite.Group(DamageTracker([200, 25]))
-                    # bullets.set_shootables(self.SHOOTABLES)
-                    # bullets.shootables.add(self.COLLIDABLES)
                 if event.key == pygame.K_r:
                     self.weapon.force_reload()
+                    logger.info("Reloading...")
                 if event.key == pygame.K_i:
+                    logger.info("Interrupting current action...")
                     self.action_manager.do_action(Action("interrupt", -2, 0), True)
             if event.type == pygame.VIDEORESIZE:
                 self.screen = pygame.display.set_mode(event.dict['size'], pygame.RESIZABLE)
@@ -312,10 +323,24 @@ class G111218(Game):
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger('main.endless_mode')
+    logger.setLevel(logging.DEBUG)
+    hdlr = logging.StreamHandler(sys.stdout)
+    hdlr.setFormatter(logging.Formatter('[%(asctime)s] [%(filename)s:%(lineno)d/%(levelname)s]: %(message)s',
+                                        '%H:%M:%S'))
+    logger.addHandler(hdlr)
+
+    #for h in new_handlers():
+    #    logger.addHandler(h)
+
+    logger.info("Starting...")
+
     AMMO = 500
-    SHOOTER_CHANCES = [True,] + [False,]*5
+    SHOOTER_CHANCES = [False,]
     REGEN_RATE = 3
     MAX_ENEMIES = 10
+    testwp =  Weapon(105, 9, Bullet, None, 40, float('inf'), 3, (1.6, 1.6))
     game = G111218()
     game.load()
     reactor.run()
+    logger.info("Stopped.")
