@@ -63,6 +63,8 @@ class ActionManager(object):
             return  # CASE: Already doing that action!
         if interrupt:
             self.current_action.interrupted()
+            self.current_action.last_use = now
+            self.current_action.cooldown_progress = self.current_action.cooldown
             self.current_action = action
             self.action_start = now
             action.start()

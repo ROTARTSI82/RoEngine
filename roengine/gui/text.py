@@ -15,10 +15,18 @@ class Text(pygame.sprite.Sprite):
         self.render(text, fgcolor=fg, bgcolor=bg, style=0, rotation=0, size=size)
 
     def render(self, *args, **kwargs):
+        if self.rect is not None:
+            old_pos = self.rect.center
+        else:
+            old_pos = self.pos
         self.image = self.font.render(*args, **kwargs)[0]
         self.rect = self.image.get_rect()
-        self.rect.center = self.pos
+        self.rect.center = old_pos
         return self.image, self.rect
+
+    def update_text(self, text):
+        self.text = text
+        self.render(text, fgcolor=self.fg, bgcolor=self.bg, style=0, rotation=0, size=self.size)
 
     def set_font(self, *args, **kwargs):
         self.font = pygame.freetype.Font(*args, **kwargs)

@@ -22,7 +22,7 @@ from data.states import *
 
 ## TODO
 # Come up with a actual name...
-#
+# Optimize test_mode.py:53-62 (Do we need to update these every frame?)
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder

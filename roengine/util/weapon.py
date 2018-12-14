@@ -147,10 +147,17 @@ class Weapon(object):
 
         self.clock = Clock()
         self.shot_damage = self.dps/rof
+        self.str_repr = 'Generic Weapon'
 
         self.reloading = False
         self.reload_action = _ReloadAction('weapon', 8, reload_time, self)
         # damage per second / shots per second = damage per shot
+
+    def set_str(self, string):
+        self.str_repr = string
+
+    def __str__(self):
+        return self.str_repr
 
     def force_reload(self):
         if self.ammo < self.maxMag and not self.reloading:
@@ -203,6 +210,7 @@ class Shotgun(Weapon):
     def __init__(self, dps, rof, bullet_class, parent, pellet_num=5, mag=8, reserve=200, reload_time=2, blume=(0, 0)):
         self.pellet_num = pellet_num
         Weapon.__init__(self, dps, rof, bullet_class, parent, mag, reserve, reload_time, blume)
+        self.str_repr = 'Generic Shotgun'
 
     def _fire(self, damage, target_pos):
         if self.reserve > 0 and (self.reloading or self.ammo <= 0):
