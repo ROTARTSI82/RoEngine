@@ -5,11 +5,9 @@ from pygame.locals import *
 from roengine import *
 from dev12_14_18.CONFIG import *
 
-DIGITS = {K_1: '1', K_2: '2', K_3: '3', K_4: '4'}
-VAL = DIGITS.keys()
+VAL = WEAPON_KEYBINDS.keys()
 
-ABILITIES = {K_v: 'b', K_c: 'c'}
-ABVAL = ABILITIES.keys()
+ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
 
@@ -133,13 +131,13 @@ def tick_test_mode(self):
                 self.enemies.add(n)
             if event.key in ABVAL:
                 self.player.action_manager.do_action(weapon_switch, True)
-                self.player.ability = self.player.abilities[ABILITIES[event.key]]
+                self.player.ability = self.player.abilities[ABILITY_KEYBINDS[event.key]]
                 self.player.mode = 'ability'
                 # self.logger.debug('ABILITY switching to %s', str(self.player.ability))
                 self.weapon_txt.update_text("Ability: " + str(self.player.ability))
             if event.key in VAL:
                 self.player.action_manager.do_action(weapon_switch, True)
-                self.player.weapon = self.player.inv[DIGITS[event.key]]
+                self.player.weapon = self.player.inv[WEAPON_KEYBINDS[event.key]]
                 self.player.mode = 'weapon'
                 # self.logger.debug('WEAPON switching to %s', str(self.player.weapon))
                 self.weapon_txt.update_text("Item: " + str(self.player.weapon))

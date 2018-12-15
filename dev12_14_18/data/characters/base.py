@@ -45,14 +45,14 @@ class BasicCharacter(PlatformerPlayer):
         self.aiming_at = [0, 0]
         self.action_manager = ActionManager()
 
-        self.inv = {'1': SMG, '2': AssaultRifle, '3': AutomaticShotgun, '4': Sniper}
-        self.abilities = {'b': Dash(self, self.game), 'c': Flight(self, self.game)}
-        self.ability = ['b']
+        self.inv = {'weapon_1': SMG, 'weapon_2': AssaultRifle, 'weapon_3': AutomaticShotgun, 'weapon_4': Sniper}
+        self.abilities = {'ability_1': Dash(self, self.game), 'ability_2': Flight(self, self.game)}
+        self.ability = ['ability_1']
         self.mode = 'weapon'
         for k in self.inv.keys():
             self.inv[k].parent = self
             self.inv[k].actionManager = self.action_manager
-        self.weapon = self.inv['1']
+        self.weapon = self.inv['weapon_1']
 
     def damage(self, damage, bullet):
         bullet.req_kill()

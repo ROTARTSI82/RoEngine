@@ -5,7 +5,7 @@ Expirement with this stuff :)
 """
 
 from __future__ import print_function
-from roengine.crypto import RSAGenerator
+from roengine.crypto import *
 
 import hashlib
 import hmac as hmac_module
@@ -22,7 +22,7 @@ if sys.version_info.major == 3:
     raw_input = input
 else:
     raw_input = raw_input  # Just makes PyCharm happy so that raw_input would always be definite.
-
+"""
 SHOW_PASSDUMP = True
 HASH_METHOD = 'sha512'
 ROUNDS = 100000  # ~100,000 for sha256 as of 2013
@@ -162,7 +162,7 @@ def get_primes(salt, maximum=1024, minimum=512, power=2):
             print (prime_start)
         prime_start += 1
     return primes
-
+"""
 
 my_acc_m = AccountManager()
 # my_acc_m.make_guest_account()

@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 import random
+import time
 import hashlib
 import os
 import binascii
@@ -19,6 +20,8 @@ ROUNDS = 100000  # ~100,000 for sha256 as of 2013
 SALT_LEN = 16  # 16 or more from os.urandom()
 MAX_PASS = 1024
 LEN = 64  # 64 default for sha256
+PRIME_RANGE = (512, 1024)
+CHUNK_SIZE = 1000
 
 
 def split(txt, n, head):
@@ -50,17 +53,21 @@ class AccountManager(object):
     def read(self, user, psw):
         if user not in self.users:
             return False
-        rsa = RSAGenerator(0, 0, 256, False)
-        rsa.public, rsa.private = self.users[user][3]
+        seed = self.users[user][3]
+        current_primes = get_primes(psw)
+        random.seed(seed)
+        rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0]/2)
         return rsa.decrypt_p(psw, self.users[user][2])
 
     def write(self, dat, user, psw):
         if user not in self.users:
             return False
-        rsa = RSAGenerator(0, 0, 256, False)
-        rsa.public, rsa.private = self.users[user][3]
+        seed = self.users[user][3]
+        current_primes = get_primes(psw)
+        random.seed(seed)
+        rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0]/2)
         self.users[user][2] = rsa.encrypt_p(psw, dat)
-        return self.users[user]
+        return self.users[user][2]
 
     def get_login(self, user, psw):
         if user not in self.users:
@@ -71,13 +78,15 @@ class AccountManager(object):
         return False
 
     def new_acc(self, user, psw):
+        seed = time.time()
         if user in self.users:
             print("Username already taken!")
             return False
         salt = get_salt(self.users, self.salt_len)
-        current_primes = get_primes(salt)
-        current_rsa = RSAGenerator(current_primes[0], current_primes[1], 256)
-        self.users[user] = [hmac(psw, salt), salt,  [], [current_rsa.public, current_rsa.private]]
+        # current_primes = get_primes(salt)
+        # random.seed(seed)
+        # current_rsa = RSAGenerator(current_primes[0], current_primes[1], 256)
+        self.users[user] = [hmac(psw, salt), salt, [], seed]
         return True
 
 
@@ -85,6 +94,7 @@ class User(object):
     def __init__(self, acc_manager):
         self.current_user = "Guest"
         self.psw = "guest123"
+        self.salt = "****************"
         self.acc_manager = acc_manager
 
     def login(self, user, psw):
@@ -92,17 +102,31 @@ class User(object):
         if userdat:
             self.current_user = user
             self.psw = psw
+            self.salt = userdat[1]
         return userdat
 
     def logout(self):
         self.current_user = "Guest"
         self.psw = "guest123"
+        self.salt = "****************"
 
-    def read_data(self):
-        return self.acc_manager.read(self.current_user, self.psw)
+    def read_data(self, psw='auto'):
+        psw = self.psw + self.salt if psw == 'auto' else psw
+        # print (self.current_user, self.psw)
+        return self.acc_manager.read(self.current_user, psw)
 
-    def write_data(self, data):
-        return self.acc_manager.write(data, self.current_user, self.psw)
+    def enc_data(self, data, psw='auto'):
+        psw = self.psw + self.salt if psw == 'auto' else psw
+        return self.acc_manager.enc(data, self.current_user, psw)
+
+    def dec_data(self, data, psw='auto'):
+        psw = self.psw + self.salt if psw == 'auto' else psw
+        return self.acc_manager.dec(data, self.current_user, psw)
+
+    def write_data(self, data, psw='auto'):
+        psw = self.psw + self.salt if psw == 'auto' else psw
+        # print (self.current_user, self.psw)
+        return self.acc_manager.write(data, self.current_user, psw)
 
 
 def get_salt(userdict, salt_len=SALT_LEN):
@@ -117,22 +141,18 @@ def hmac(psw, salt, method=HASH_METHOD, iter=ROUNDS, length=LEN):
     return binascii.hexlify(hashlib.pbkdf2_hmac(method, psw, salt, iter, length))
 
 
+# Wrap function from https://pymorton.wordpress.com/2015/02/16/wrap-integer-values-to-fixed-range/
 def wrap(minimum, maximum, val):
-    if minimum <= val <= maximum:
-        return val
-    while val > maximum:
-        val -= maximum + 1
-    while val < minimum:
-        val = maximum-(minimum-val) + 1
-    return val
+    return (val - minimum) % (maximum - minimum + 1) + minimum
 
 
 def is_prime_openssl(n):
     return subprocess.check_output(['openssl', 'prime', str(n)]).endswith('is prime\n')
 
 
-def get_primes(salt, maximum=1024, minimum=512, power=2):
-    prime_start = pow(power, wrap(minimum, maximum, sum([ord(i) for i in salt])))
+def get_primes(salt, minimum=2**PRIME_RANGE[0], maximum=2**PRIME_RANGE[1], mult=CHUNK_SIZE):
+    prime_start = wrap(minimum, maximum, mult*sum([ord(i) for i in salt]))
+    print prime_start
     primes = []
     while len(primes) < 2:
         if is_prime_openssl(prime_start):
@@ -209,11 +229,11 @@ class RSAGenerator(object):
             raise ValueError('p and q cannot be equal')
         n = p * q
         phi = (p - 1) * (q - 1)
-        e = random.randrange(1, phi)
+        e = random.randrange(1, phi)  # Can be seeded! :(
 
         g = gcf(e, phi)
         while g != 1:
-            e = random.randrange(1, phi)
+            e = random.randrange(1, phi)  # Can be seeded too! :(
             g = gcf(e, phi)
 
         d = multiplicative_inverse(e, phi)
