@@ -20,6 +20,8 @@ class Action(object):
             return self.cooldown - self.cooldown_progress
         return 0
 
+    def tick(self): pass
+
     def start(self): pass
 
     def finish(self): pass
@@ -38,8 +40,9 @@ class ActionManager(object):
         self.progress = 0
 
     def tick(self):
-        now = time.time()
         if self.current_action is not None:
+            now = time.time()
+            self.current_action.tick()
             self.progress = now-self.action_start
             if self.progress > self.action_duration:
                 self.current_action.finish()

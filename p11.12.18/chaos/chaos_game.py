@@ -6,9 +6,9 @@ import marshal
 pygame.init()
 
 DOT_SIZE = 1
-GENERATE = False
-LOAD = 'triangle.dat'
-SAVE = None
+GENERATE = True
+LOAD = 'new.dat'
+SAVE = 'new.dat'
 
 
 def update_points():
@@ -25,11 +25,11 @@ def update_points():
 screen = pygame.display.set_mode([650, 490])
 screen.fill([255, 255, 255])
 
-rate = 2.0/3
+rate = 0.5
 triangle = [[0, 480], [640, 480], [320, 0]]
 carpet = [[0, 0], [0, 240], [0, 480], [320, 480], [640, 480], [640, 240], [640, 0], [320, 0]]
 # shape = [[0, 0], [0, 480], [640, 480], [640, 0]]
-shape = carpet
+shape = triangle
 pygame.draw.lines(screen, [0, 0, 0], True, shape, 1)
 random.shuffle(shape)
 if os.path.exists(LOAD):

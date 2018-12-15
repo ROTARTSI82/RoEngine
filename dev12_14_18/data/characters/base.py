@@ -2,19 +2,32 @@ import pygame
 
 from pygame.locals import *
 from roengine import *
-from dev12_13_18.data.weapons.weapons import *
+from dev12_14_18.data.weapons.weapons import *
 
 
 class Dash(Action):
     def __init__(self, player, game):
         self.player = player
         self.game = game
-        Action.__init__(self, 'ability', 5, 2, 10)
+        Action.__init__(self, 'ability', 5, 0, 5)
 
     def __str__(self): return "Dash"
 
     def start(self):
-        self.player.position = pygame.math.Vector2(self.game.map.translate_pos(pygame.mouse.get_pos()))
+        self.player.position = pygame.math.Vector2(self.game.map.translate_pos(self.game.mouse_pos))
+        self.player.update_rect()
+
+
+class Flight(Action):
+    def __init__(self, player, game):
+        self.player = player
+        self.game = game
+        Action.__init__(self, 'ability', 4, 5, 30)
+
+    def __str__(self): return "Flight"
+
+    def tick(self):
+        self.player.position = pygame.math.Vector2(self.game.map.translate_pos(self.game.mouse_pos))
         self.player.update_rect()
 
 
@@ -33,7 +46,7 @@ class BasicCharacter(PlatformerPlayer):
         self.action_manager = ActionManager()
 
         self.inv = {'1': SMG, '2': AssaultRifle, '3': AutomaticShotgun, '4': Sniper}
-        self.abilities = {'b': Dash(self, self.game)}
+        self.abilities = {'b': Dash(self, self.game), 'c': Flight(self, self.game)}
         self.ability = ['b']
         self.mode = 'weapon'
         for k in self.inv.keys():
