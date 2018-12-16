@@ -31,7 +31,7 @@ def enter_test_mode(self, old):
     self.map = Map([1500, 500])
     self.player.bounds = self.map.get_map()
 
-    self.hp_bar = ProgressBar(100, 100, (HUD_RES[0]-200, 25), (2, 2), ((255, 0, 0), (128, 128, 128)))
+    self.hp_bar = ProgressBar((0, 100), 100, (HUD_RES[0]-200, 25), (2, 2), ((255, 0, 0), (128, 128, 128)))
     self.hp_bar.rect.center = HUD_RES[0]/2, 25
     bullets.set_bounds(self.map.get_map())
 
@@ -63,6 +63,7 @@ def exit_test_mode(self, new):
 
 
 def tick_test_mode(self):
+    self.clock.tick()
 
     self.player.update()
     bullets.update()
@@ -104,7 +105,8 @@ def tick_test_mode(self):
     self.screen.fill([255, 255, 255])
     self.map.blit_to(self.screen)
     self.hud_layer.blit_to(self.screen)
-    pygame.display.flip()
+    self.logger.debug(str(self.clock.get_fps()))
+    pygame.display.update(self.hud_layer.flush_rects() + self.map.flush_rects())
 
     for event in pygame.event.get():
         event_logger(self, event)

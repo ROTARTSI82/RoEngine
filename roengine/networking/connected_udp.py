@@ -57,7 +57,6 @@ class UDPServerFactory(DatagramProtocol):
 
     def datagramReceived(self, message, address):
         if address not in self.client_protocols:
-            print ('building')
             self.build_protocol(address)
         try:
             message = load(message)
@@ -103,29 +102,30 @@ class UDPServerFactory(DatagramProtocol):
         print ('got ping! from fac')
 
     def build_protocol(self, addr):
-        print ('build confirmed')
-        np = self.protocol()
-        np.factory = self
-        np.address = addr
-        if len(self.clients) < self.max_clients:
-            self.clients.append(addr)
-            self.client_protocols[addr] = np
-        else:
-            print ('Kicking %s; game full' % str(addr))
-            np.enque({'action': 'kick', 'reason': 'Game already full'})
-            np.tick()
+        if addr not in self.clients:
+            np = self.protocol()
+            np.factory = self
+            np.address = addr
+            if len(self.clients) < self.max_clients:
+                self.clients.append(addr)
+                self.client_protocols[addr] = np
+            else:
+                print ('Kicking %s; game full' % str(addr))
+                np.enque({'action': 'kick', 'reason': 'Game already full'})
+                np.tick()
 
     def network_verify_send(self, message, address):
         message['action'] = 'confirm_arrival'
         self.send_to_addr(message, address)
+        print ("verify:", message, address)
         try:
-            if hasattr(self.client_protocols[address], "network_" + message["action"]):
-                getattr(self.client_protocols[address], "network_" + message["action"])(message)
+            if hasattr(self.client_protocols[address], "network_" + message['data']["action"]):
+                getattr(self.client_protocols[address], "network_" + message['data']["action"])(message)
         except Exception as e:
             print("err:", message, e)
         try:
-            if hasattr(self, "network_" + message["action"]):
-                getattr(self, "network_" + message["action"])(message, address)
+            if hasattr(self, "network_" + message['data']["action"]):
+                getattr(self, "network_" + message['data']["action"])(message, address)
         except Exception as e:
             print("err:", message, e)
 

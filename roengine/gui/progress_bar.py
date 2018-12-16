@@ -6,16 +6,16 @@ __all__ = ["ProgressBar"]
 
 
 class ProgressBar(pygame.sprite.Sprite):
-    def __init__(self, maxval, val, size, width, colors=((255, 0, 0), (0, 0, 0))):
+    def __init__(self, val_range, val, size, width, colors=((255, 0, 0), (0, 0, 0))):
         pygame.sprite.Sprite.__init__(self)
-        self.max = maxval
+        self.range = val_range
         self.val = val
         self.size = size
         self.width = width
         self.cols = colors
 
         self.image = pygame.Surface([self.size[0] + self.width[0] * 2, self.size[1] + self.width[1] * 2])
-        self.rate = size[0] / float(maxval)
+        self.rate = size[0] / float(val_range[1])
         self.bar_width = val * self.rate
         self.bar = pygame.Surface([self.bar_width, size[1]])
         self.image.fill(colors[1])
@@ -24,10 +24,10 @@ class ProgressBar(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def update(self):
-        self.val = min(self.max, max(0, self.val))
+        self.val = min(self.range[1], max(self.range[0], self.val))
         self.image = pygame.Surface([self.size[0] + self.width[0] * 2, self.size[1] + self.width[1] * 2])
         oldcenter = self.rect.center
-        self.rate = self.size[0] / float(self.max)
+        self.rate = self.size[0] / float(self.range[1])
         self.bar_width = self.val * self.rate
         self.bar = pygame.Surface([self.bar_width, self.size[1]])
         self.image.fill(self.cols[1])

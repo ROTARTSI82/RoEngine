@@ -23,12 +23,13 @@ from data.states import *
 ## TODO
 # Come up with a actual name...
 # Optimize test_mode.py:53-62 (Do we need to update these every frame?)
+# player.check_bottom_grounded
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder
-__version__ = 'dev12.14.18'
+__version__ = 'dev12.16.18a'
 __author__ = "Grant Yang <rotartsi0482@gmail.com>"
-__date__ = '14 December 2018'
+__date__ = '16 December 2018'
 
 
 class D12_11_18(Game):
@@ -44,6 +45,7 @@ class D12_11_18(Game):
         self.hud_layer = Map(HUD_RES)
         self.clear_surf = pygame.Surface(HUD_RES, SRCALPHA, 32)
 
+        self.clock = pygame.time.Clock()
         self.mouse_sprite = DummySprite([10, 10], [0, 0])
         self.mouse_pos = [0, 0]
 
@@ -85,6 +87,7 @@ class D12_11_18(Game):
         logger.fatal("Arbitrary update_state: '%s' -> '%s'", old, new)
 
     def tick_main_menu(self):
+        self.clock.tick()
         self.hud_layer._map = self.clear_surf.copy()
         self.mouse_sprite.rect.center = self.hud_layer.translate_pos(self.mouse_pos)
         self.hud_layer.draw_group(buttons.visible_bts)
@@ -92,7 +95,7 @@ class D12_11_18(Game):
 
         self.screen.fill([255, 255, 255])
         self.hud_layer.blit_to(self.screen)
-        pygame.display.flip()
+        pygame.display.update(self.hud_layer.flush_rects())
 
         for event in pygame.event.get():
             self.universal_events(event)
@@ -140,7 +143,7 @@ if __name__ == '__main__':
     if twisted.__version__ != '18.9.0':
         warnings.warn(Warning("Got twisted==%s (expected twisted==18.9.0)" % twisted.__version__))
 
-    game = D12_11_18()
+    game = D12_11_18(60)
     game.load()
     reactor.run()
     logger.info("Runtime finished completely. Stopped.")
