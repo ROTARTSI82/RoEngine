@@ -11,7 +11,7 @@ Written by Grant Yang (2018)
 
 from .udp import *
 from .tcp import *
-from .connected_udp import *
+from .cUDP import *
 
 __all__ = ['GenericUDPClient', 'GenericTCPClient', 'GenericClientFactory', 'reactor',
            'GenericUDPServer', 'GenericTCPServer', 'GenericServerFactory']

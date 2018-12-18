@@ -6,10 +6,9 @@ import hashlib
 import os
 import binascii
 import hmac as hmac_module
-import base64
 import subprocess
 
-from roengine.maths import is_prime, gcf
+from roengine.maths import gcf
 
 __all__ = ('RSAGenerator', 'hmac', 'User', 'AccountManager', 'is_prime_openssl')
 
@@ -21,10 +20,10 @@ SALT_LEN = 16  # 16 or more from os.urandom()
 MAX_PASS = 1024
 LEN = 64  # 64 default for sha256
 PRIME_RANGE = (512, 1024)
-CHUNK_SIZE = 1000
+CHUNK_SIZE = 2**512
 
 
-def split(txt, n, head):
+def split(txt, n, head=''):
     return [head+txt[i:i+n] for i in range(0, len(txt), n)]
 
 
@@ -50,6 +49,24 @@ class AccountManager(object):
         dummy_user = User(self)
         dummy_user.write_data("Hello World! This is the Guest account. Please sign in.")
 
+    def dec(self, data, user, psw):
+        if user not in self.users:
+            return ""
+        seed = self.users[user][3]
+        current_primes = get_primes(psw)
+        random.seed(seed)
+        rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0] / 2)
+        return rsa.decrypt_p(psw, data, sum(ord(i) for i in psw))  # use auto seed?
+
+    def enc(self, dat, user, psw):
+        if user not in self.users:
+            return []
+        seed = self.users[user][3]
+        current_primes = get_primes(psw)
+        random.seed(seed)
+        rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0] / 2)
+        return rsa.encrypt_p(psw, dat, sum([ord(i) for i in psw]))  # use auto seed?
+
     def read(self, user, psw):
         if user not in self.users:
             return False
@@ -57,7 +74,7 @@ class AccountManager(object):
         current_primes = get_primes(psw)
         random.seed(seed)
         rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0]/2)
-        return rsa.decrypt_p(psw, self.users[user][2])
+        return rsa.decrypt_p(psw, self.users[user][2], sum([ord(i) for i in psw]))  # use auto seed?
 
     def write(self, dat, user, psw):
         if user not in self.users:
@@ -66,7 +83,7 @@ class AccountManager(object):
         current_primes = get_primes(psw)
         random.seed(seed)
         rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0]/2)
-        self.users[user][2] = rsa.encrypt_p(psw, dat)
+        self.users[user][2] = rsa.encrypt_p(psw, dat, sum(ord(i) for i in psw))  # use auto seed?
         return self.users[user][2]
 
     def get_login(self, user, psw):
@@ -152,13 +169,14 @@ def is_prime_openssl(n):
 
 def get_primes(salt, minimum=2**PRIME_RANGE[0], maximum=2**PRIME_RANGE[1], mult=CHUNK_SIZE):
     prime_start = wrap(minimum, maximum, mult*sum([ord(i) for i in salt]))
-    print prime_start
     primes = []
     while len(primes) < 2:
         if is_prime_openssl(prime_start):
             primes.append(prime_start)
             # print (prime_start)
         prime_start += 1
+    print primes
+    print primes[0].bit_length()
     return primes
 
 # BELOW IS A COMBINATION OF: https://gist.github.com/JonCooperWorks/5314103 and
@@ -187,27 +205,13 @@ class RSAGenerator(object):
         key, n = self.public
         return pow(num, key, n)
 
-    def encrypt_p(self, key, clear, en_b64=True):
-        enc = []
-        for i in range(len(clear)):
-            key_c = key[i % len(key)]
-            enc_c = chr((ord(clear[i]) + ord(key_c)) % 256)
-            enc.append(enc_c)
-        enc = "".join(enc)
-        if en_b64:
-            enc = base64.urlsafe_b64encode(enc)
-        return self.encrypt(enc)
+    def encrypt_p(self, key, clear, seed=0):
+        enc = psw_encrypt(clear, key, seed=seed)
+        return [self.encrypt_n(i) for i in enc]
 
-    def decrypt_p(self, key, enc, en_b64=True):
-        enc = self.decrypt(enc)
-        dec = []
-        if en_b64:
-            enc = base64.urlsafe_b64decode(enc)
-        for i in range(len(enc)):
-            key_c = key[i % len(key)]
-            dec_c = chr((256 + ord(enc[i]) - ord(key_c)) % 256)
-            dec.append(dec_c)
-        return "".join(dec)
+    def decrypt_p(self, key, enc, seed=0):
+        enc = [self.decrypt_n(i) for i in enc]
+        return psw_decrypt(enc, key, seed=seed)
 
     def decrypt(self, ciphertext):
         key, n = self.private
@@ -222,7 +226,7 @@ class RSAGenerator(object):
 
     def generate_keypair(self):
         p, q = self.p, self.q
-        # I've chosen crazy big primes with openssl. Checking for primes would take too long, and is redundant.
+        # I've chosen 512-bit+ primes with openssl. Checking for primes would take too long, and is redundant.
         #if not (is_prime(p) and is_prime(q)):
         #    raise ValueError('Both numbers must be prime.')
         if p == q:
@@ -266,3 +270,18 @@ def multiplicative_inverse(e, phi):
 
     if temp_phi == 1:
         return d + phi
+
+
+def psw_decrypt(ciphertext, psw, seed=0, psw_chunk_size=32):
+    random.seed(ord(psw[0]) if seed == 0 else seed)
+    psw_hex = [int(i, 0) for i in split(binascii.hexlify(psw), psw_chunk_size - 1, '0x1')]
+    psw_sum = sum([ord(i) for i in psw])
+    split_str = [hex((i-psw_sum)/random.choice(psw_hex)).strip("L")[3:] for i in ciphertext]
+    return binascii.unhexlify("".join(split_str))
+
+
+def psw_encrypt(plaintext, psw, seed=0, chunk_size=32, psw_chunk_size=32):
+    random.seed(ord(psw[0]) if seed == 0 else seed)
+    psw_sum = sum([ord(i) for i in psw])
+    psw_hex = [int(i, 0) for i in split(binascii.hexlify(psw), psw_chunk_size - 1, '0x1')]
+    return [int(i, 0)*random.choice(psw_hex)+psw_sum for i in split(binascii.hexlify(plaintext), chunk_size - 1, '0x1')]

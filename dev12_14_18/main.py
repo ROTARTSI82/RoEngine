@@ -27,17 +27,15 @@ from data.states import *
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder
-__version__ = 'dev12.16.18a'
+__version__ = 'dev12.18.18'
 __author__ = "Grant Yang <rotartsi0482@gmail.com>"
-__date__ = '16 December 2018'
+__date__ = '18 December 2018'
 
 
 class D12_11_18(Game):
     enter_test_mode, exit_test_mode, tick_test_mode = enter_test_mode, exit_test_mode, tick_test_mode
     def start(self):
         pygame.init()
-        # Add vars from global
-        self.logger = logger
         self.initiated = []
 
         self.screen = pygame.display.set_mode(SCREEN_RES, SCREEN_FLAGS)
@@ -112,13 +110,11 @@ def exception_handler(type, value, tb):
 
 if __name__ == '__main__':
     logging.captureWarnings(True)
-    warningLog = logging.getLogger('py.warnings')
-
+    root = logging.getLogger()
     logger = logging.getLogger('main')
     logger.setLevel(logging.DEBUG)
     for handler in generic_logging.handlers:
-        warningLog.addHandler(handler)
-        logger.addHandler(handler)
+        root.addHandler(handler)
     sys.excepthook = exception_handler
 
     logger.info("Starting...")
@@ -135,13 +131,13 @@ if __name__ == '__main__':
     logger.info("python==%s (Expected python==2.7)" % sys.version[:3])
 
     if pygame.ver != '1.9.4':
-        warnings.warn(Warning("Got pygame==%s (expected pygame==1.9.4)" % pygame.ver))
+        warnings.warn("Got pygame==%s (expected pygame==1.9.4)" % pygame.ver, Warning)
 
     if sys.version[:3] != '2.7':
-        warnings.warn(Warning("Got python==%s (expected python==2.7)" % sys.version[:3]))
+        warnings.warn("Got python==%s (expected python==2.7)" % sys.version[:3], Warning)
 
     if twisted.__version__ != '18.9.0':
-        warnings.warn(Warning("Got twisted==%s (expected twisted==18.9.0)" % twisted.__version__))
+        warnings.warn("Got twisted==%s (expected twisted==18.9.0)" % twisted.__version__, Warning)
 
     game = D12_11_18(60)
     game.load()

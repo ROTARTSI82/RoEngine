@@ -6,11 +6,17 @@ import rencode
 
 from twisted.internet import reactor
 from twisted.internet.protocol import Protocol, ServerFactory, ClientFactory, connectionDone
+import logging
 
 __all__ = ['GenericServerFactory', 'GenericTCPServer', 'GenericTCPClient', 'GenericClientFactory', 'reactor']
 
 load = rencode.loads
 dump = rencode.dumps
+
+CProtLog = logging.getLogger('tcp.CliProt')
+SProtLog = logging.getLogger('tcp.ServProt')
+CFacLog = logging.getLogger('tcp.CliFac')
+SFacLog = logging.getLogger('tcp.ServFac')
 
 
 class GenericTCPServer(Protocol):
@@ -34,7 +40,7 @@ class GenericTCPServer(Protocol):
         :param data: "{'action': '...', ...}"
         :rtype: None
         """
-        print ("[CLIENT]", repr(data))
+        # print ("[CLIENT]", repr(data))
         try:
             data = load(data)
             for packet in data:
@@ -42,14 +48,12 @@ class GenericTCPServer(Protocol):
                     if hasattr(self, "network_" + packet["action"]):
                         getattr(self, "network_" + packet["action"])(packet)
                     else:
-                        raise Exception("No action")
+                        SProtLog.critical("%s Got packet with no handler: %s", self.address, packet)
                 except:
-                    self.arbitrary_packet(packet)
+                    SProtLog.exception("%s network_%s(%s) failed:", self.address,
+                                       "?" if 'action' not in packet else packet['action'], packet)
         except Exception as e:
-            print ("err:", data, e)
-
-    def arbitrary_packet(self, pack):
-        print ("Unable to handle: ", pack)
+            SProtLog.exception("%s Invalid packet: %s", self.address, data)
 
     def _send(self, message):
         """
@@ -62,7 +66,8 @@ class GenericTCPServer(Protocol):
             self.transport.write(dump(message))
         else:
             self.send_que.append(message)
-            print ("err:", "transport == None")
+            SProtLog.critical("%s _send(%s) failed due to null transport.", self.address, message)
+            SProtLog.critical("%s Re-appending message to send_que", self.address)
 
     def enque(self, data):
         self.send_que.append(data)
@@ -82,11 +87,11 @@ class GenericTCPServer(Protocol):
         :type reason: Failure
         :rtype: None
         """
-        print ("conn lost:", reason)
+        SProtLog.critical("%s Connection Lost: %s", self.address, reason)
         reason.printDetailedTraceback()
 
     def shutdown(self):
-        print ("shutdown called")
+        SProtLog.info("%s Shutting down...", self.address)
         self.transport.loseConnection()
 
 
@@ -109,6 +114,7 @@ class GenericServerFactory(ServerFactory):
         """
         self.max_clients = max_clients
         self.host, self.port = host, port
+        self.address = host, port
         self.react_port = None
         self.clients = []
 
@@ -121,13 +127,13 @@ class GenericServerFactory(ServerFactory):
         :param addr: IPv4Address(type='TCP', host='...', port=...)
         :rtype: GenericTCPServer
         """
-        print ("New client:", addr)
+        SFacLog.info("%s New Client%s", self.address, addr)
         np = ServerFactory.buildProtocol(self, addr)
         np.address = addr
         if len(self.clients) < self.max_clients:
             self.clients.append(np)
         else:
-            print ("Game full. Kicking", addr)
+            SFacLog.info("%s Game full. Kicking Client%s", self.address, addr)
             np.enque({"action": "kick", "reason": "Game already full"})
         return np
 
@@ -142,7 +148,7 @@ class GenericServerFactory(ServerFactory):
         if transport is not None:
             transport.write(dump(message))
         else:
-            print ("err:", "transport == None")
+            SFacLog.critical("%s _send failed due to null transport being provided.", self.address)
 
     def empty_all(self):
         [protocol.empty_que() for protocol in self.clients]
@@ -157,9 +163,10 @@ class GenericServerFactory(ServerFactory):
         :rtype: None
         """
         self.react_port = reactor.listenTCP(self.port, self, interface=self.host)
+        SFacLog.info("Loading ServerFactory%s", self.address)
 
     def shutdown(self):
-        print ("shutdown called")
+        SFacLog.info("%s Shutting down...", self.address)
         [protocol.shutdown() for protocol in self.clients]
         self.react_port.stopListening()
 
@@ -193,14 +200,12 @@ class GenericTCPClient(Protocol):
                     if hasattr(self, "network_" + packet["action"]):
                         getattr(self, "network_" + packet["action"])(packet)
                     else:
-                        raise Exception("No action")
+                        CProtLog.critical("%s Got packet without handler: %s", self.address, packet)
                 except:
-                    self.arbitrary_packet(packet)
+                    CProtLog.exception("%s network_%s(%s) failed:", self.address,
+                                       "?" if 'action' not in packet else packet['action'], packet)
         except Exception as e:
-            print("err:", data, e)
-
-    def arbitrary_packet(self, pack):
-        print ("Unable to handle: ", pack)
+            CProtLog.exception("Invalid Packet: %s", data)
 
     def enque(self, data):
         self.send_que.append(data)
@@ -221,7 +226,8 @@ class GenericTCPClient(Protocol):
             self.transport.write(dump(message))
         else:
             self.send_que.append(message)
-            print ("err:", "transport == None")
+            CProtLog.critical("%s _send failed due to null transport!", self.address)
+            CProtLog.critical("%s Re-appending message to send_que", self.address)
 
     def connectionMade(self):
         """
@@ -231,7 +237,7 @@ class GenericTCPClient(Protocol):
 
         :rtype: None
         """
-        print ("Emptying send_que...")
+        CProtLog.info("%s Connection made! Emptying send que.", self.address)
         self.empty_que()
 
     def connectionLost(self, reason=connectionDone):
@@ -243,7 +249,7 @@ class GenericTCPClient(Protocol):
         :type reason: Failure
         :rtype: None
         """
-        print ("conn lost: ", reason)
+        CProtLog.critical("%s Connection lost: %s", self.address, reason)
         reason.printDetailedTraceback()
 
     def network_kick(self, data):
@@ -253,7 +259,8 @@ class GenericTCPClient(Protocol):
         :param data: {"action": "kick", "reason": "...", ...}
         :rtype: None
         """
-        print ("Was kicked:", data['reason'])
+        CProtLog.info("%s Was kicked: '%s'", self.address,
+                      data['reason'] if 'reason' in data else '?')
         self.factory.shutdown()
 
     def shutdown(self):
@@ -262,9 +269,10 @@ class GenericTCPClient(Protocol):
 
         :return: None
         """
-        print ("shutdown called")
+        CProtLog.info("%s Shutting down...", self.address)
         self.transport.loseConnection()
 
+    # For testing. Basically useless
     def network_ping(self, message):
         print ("PING")
 
@@ -289,6 +297,7 @@ class GenericClientFactory(ClientFactory):
         :param port: int (between 0 and 65535)
         """
         self.host, self.port = host, port
+        self.address = host, port
         self.connector, self.protocol_instance = None, None
 
     def buildProtocol(self, addr):
@@ -300,7 +309,7 @@ class GenericClientFactory(ClientFactory):
         :param addr: IPv4Address(type='TCP', host=..., port=...)
         :rtype: GenericTCPClient
         """
-        print ("Connected:", addr)
+        CFacLog.info("%s Connected! %s", self.address, addr)
         self.protocol_instance = ClientFactory.buildProtocol(self, addr)
         self.protocol_instance.address = addr
         return self.protocol_instance
@@ -317,21 +326,21 @@ class GenericClientFactory(ClientFactory):
             self.protocol_instance._send(message)
         else:
             reactor.callLater(retry, self._send, message, retry)
-            print ("err:", "self.protocol_instance == None")
+            CFacLog.critical("%s _send failed due to null protocol_instance.", self.address)
 
     def empty_all(self, retry=1):
         if self.protocol_instance is not None:
             self.protocol_instance.empty_que()
         else:
             reactor.callLater(retry, self.empty_all, retry)
-            print ("err:", "self.protocol_instance == None")
+            CFacLog.critical("%s emtpy_all() failed due to null protocol_instance.", self.address)
 
     def enque_all(self, data, retry=1):
         if self.protocol_instance is not None:
             self.protocol_instance.enque(data)
         else:
             reactor.callLater(retry, self.empty_all, data, retry)
-            print ("err:", "self.protocol_instance == None")
+            CFacLog.critical("%s enque_all() failed due to null protocol_instance.", self.address)
 
     def load(self):
         """
@@ -339,6 +348,7 @@ class GenericClientFactory(ClientFactory):
 
         :rtype: None
         """
+        CFacLog.info("Loading ClientFactory%s", self.address)
         self.connector = reactor.connectTCP(self.host, self.port, self)
 
     def clientConnectionFailed(self, connector, reason):
@@ -351,7 +361,7 @@ class GenericClientFactory(ClientFactory):
         :type reason: Failure
         :rtype: None
         """
-        print ("conn failed:", reason)
+        CFacLog.critical("%s Cannot connect to `%s`: %s", self.address, connector, reason)
 
     def clientConnectionLost(self, connector, reason):
         """
@@ -363,10 +373,10 @@ class GenericClientFactory(ClientFactory):
         :param reason:
         :return:
         """
-        print ("conn lost:", reason)
+        CFacLog.critical("%s Connection to `%s` lost: %s", self.address, connector, reason)
         reason.printDetailedTraceback()
 
     def shutdown(self):
-        print ("shutdown called")
+        CFacLog.info("%s Shutting down...", self.address,)
         self.protocol_instance.shutdown()
         self.connector.disconnect()

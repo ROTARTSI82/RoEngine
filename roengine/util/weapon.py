@@ -4,7 +4,7 @@ import pygame
 import time
 import random
 
-from roengine.gameplay.projectile import Projectile
+from roengine.game.projectile import Projectile
 from roengine.util.action import Action, ActionManager
 
 __all__ = ["Weapon", "bullets", "Bullet", "Shotgun"]

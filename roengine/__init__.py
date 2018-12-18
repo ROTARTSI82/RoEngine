@@ -5,8 +5,8 @@
 RoEngine_temp is a library for making mundane parts easy and fast.
 """
 
-from .gameplay import *
-from .networking import *
+from .game import *
+from .net import *
 from .util import *
 from .gui import *
 from .cursors import *

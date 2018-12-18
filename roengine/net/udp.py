@@ -1,8 +1,14 @@
 # -*- coding: UTF-8 -*-
 
+"""
+Warning: `roengine.net.udp` is depreciated; it is replaced by `roengine.net.cUDP`
+"""
+
 from __future__ import print_function
 
 import rencode
+import warnings
+import logging
 
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
@@ -11,6 +17,11 @@ __all__ = ['GenericUDPServer', 'GenericUDPClient', 'reactor']
 
 load = rencode.loads
 dump = rencode.dumps
+
+ServLog = logging.getLogger('udp.server')
+CliLog = logging.getLogger('udp.client')
+
+warnings.warn("roengine.net.udp is depreciated. Use roengine.net.cUDP", DeprecationWarning)
 
 
 class GenericUDPServer(DatagramProtocol):
@@ -35,6 +46,7 @@ class GenericUDPServer(DatagramProtocol):
 
         :return:
         """
+        ServLog.info("Loading UDPServer%s", (self.host, self.port))
         reactor.listenUDP(self.port, self, interface=self.host)
 
     def datagramReceived(self, message, address):

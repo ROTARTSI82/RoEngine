@@ -4,7 +4,6 @@ __all__ = ["Map", ]
 
 
 class Map(object):
-
     def __init__(self, size):
         self._map = pygame.Surface(size).convert()
         self.scaled = self._map

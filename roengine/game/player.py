@@ -1,7 +1,9 @@
 import pygame
 import math
 
-__all__ = ["PlatformerPlayer", ]
+__all__ = ["PlatformerPlayer", 'PLAYER_KEYBINDS']
+
+PLAYER_KEYBINDS = {'jump': (pygame.K_SPACE, pygame.K_w), 'forward': (pygame.K_d, ), 'backward': (pygame.K_a, )}
 
 
 class PlatformerPlayer(pygame.sprite.Sprite):
@@ -51,18 +53,18 @@ class PlatformerPlayer(pygame.sprite.Sprite):
 
     def update_event(self, event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_d:
+            if event.key in PLAYER_KEYBINDS['forward']:
                 self.input_state["forward"] = True
-            if event.key == pygame.K_a:
+            if event.key in PLAYER_KEYBINDS['backward']:
                 self.input_state["backward"] = True
-            if event.key == pygame.K_SPACE or event.key == pygame.K_w:
+            if event.key in PLAYER_KEYBINDS["jump"]:
                 self.input_state["jump"] = True
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_d:
+            if event.key in PLAYER_KEYBINDS['forward']:
                 self.input_state["forward"] = False
-            if event.key == pygame.K_a:
+            if event.key in PLAYER_KEYBINDS['backward']:
                 self.input_state["backward"] = False
-            if event.key == pygame.K_SPACE or event.key == pygame.K_w:
+            if event.key in PLAYER_KEYBINDS["jump"]:
                 self.input_state["jump"] = False
 
     def clamp_velocity(self):

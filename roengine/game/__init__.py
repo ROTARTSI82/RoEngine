@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-This is a generic outline for gameplay elements.
+This is a generic outline for game elements.
 
 This script defines
 """
