@@ -10,7 +10,7 @@ import random
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 
-__all__ = ["Dummy", "Game", "DummySprite"]
+__all__ = ["Dummy", "Game", "Obstacle"]
 
 
 class Dummy(object):
@@ -90,13 +90,21 @@ class Game(object):
         return _tick
 
 
-class DummySprite(pygame.sprite.Sprite):
+class Obstacle(pygame.sprite.Sprite):
     refract_blume = [2.0, 2.0]
-    def __init__(self, size, pos):
+
+    def __init__(self, size, pos, lvl=1, cols=('+y', '-y', '+x', '-x')):
         pygame.sprite.Sprite.__init__(self)
+
+        self.climb_difficulty = lvl
+        self.collide_modes = cols
+
         self.image = pygame.Surface(size).convert()
         self.rect = self.image.get_rect()
         self.rect.center = pos
+
+    def on_collide(self, face, player):
+        pass
 
     def damage(self, damage, parent):
         parent.req_kill()

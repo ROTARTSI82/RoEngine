@@ -4,8 +4,6 @@ from pygame.locals import *
 from roengine import *
 from dev12_14_18.data.weapons.weapons import *
 
-BOTTOM_GROUNDED_CHECKS = {'enemy': True, 'player': True}
-
 
 class Dash(Action):
     def __init__(self, player, game):
@@ -35,8 +33,7 @@ class Flight(Action):
 
 class BasicCharacter(PlatformerPlayer):
     def __init__(self, game):
-        PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha(),
-                                  bottom_check=BOTTOM_GROUNDED_CHECKS['player'])
+        PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
         self.image.fill([0, 0, 255])
         self.health = 100
         self.defense = 1
@@ -71,8 +68,7 @@ class BasicCharacter(PlatformerPlayer):
 
 class TargetDummy(PlatformerPlayer):
     def __init__(self):
-        PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha(),
-                                  bottom_check=BOTTOM_GROUNDED_CHECKS['enemy'])
+        PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
         self.image.fill([255, 0, 0])
         self.health = 75
         self.defense = 1

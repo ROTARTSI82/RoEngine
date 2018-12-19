@@ -168,11 +168,11 @@ class G111218(Game):
 
         self.player = Player(pygame.Surface([15, 15]).convert_alpha())
         self.player.image.fill([255, 0, 0])
-        self.COLLIDABLES = pygame.sprite.Group(DummySprite([100, 10], [100, 400]),
-                                               DummySprite([100, 10], [150, 428]),
-                                               DummySprite([10, 400], [250, 28]),
-                                               DummySprite([1920, 50], [320, 480]),
-                                               DummySprite([100, 100], [320, 405]))
+        self.COLLIDABLES = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
+                                               Obstacle([100, 10], [150, 428]),
+                                               Obstacle([10, 400], [250, 28]),
+                                               Obstacle([1920, 50], [320, 480]),
+                                               Obstacle([100, 100], [320, 405]))
 
         self.enemies = pygame.sprite.Group()
         self.hp_bar = ProgressBar(110, self.player.hp, [500, 20], [2, 2], colors=((255, 0, 0), (128, 128, 128)))

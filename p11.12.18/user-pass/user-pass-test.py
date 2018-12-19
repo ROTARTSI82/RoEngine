@@ -7,12 +7,8 @@ Expirement with this stuff :)
 from __future__ import print_function
 from roengine.crypto import *
 
-import hashlib
-import hmac as hmac_module
 import traceback
-import binascii
-import os
-import subprocess
+import logging
 
 import pprint
 import marshal
@@ -21,7 +17,15 @@ import sys
 if sys.version_info.major == 3:
     raw_input = input
 else:
-    raw_input = raw_input  # Just makes PyCharm happy so that raw_input would always be definite.
+    raw_input = raw_input
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
+hdlr = logging.StreamHandler(sys.stdout)
+fmtr = logging.Formatter('[%(asctime)s|%(name)s] [%(filename)s:%(lineno)d/%(levelname)s]: %(message)s',
+                         '%H:%M:%S')
+hdlr.setFormatter(fmtr)
+root.addHandler(hdlr)
+
 """
 SHOW_PASSDUMP = True
 HASH_METHOD = 'sha512'

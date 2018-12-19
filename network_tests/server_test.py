@@ -17,14 +17,14 @@ class CustomGame(Game):
         self.screen = pygame.display.set_mode([640, 480])
 
         self.players = pygame.sprite.Group()
-        self.COLLIDABLES = pygame.sprite.Group(DummySprite([100, 10], [100, 400]),
-                                               DummySprite([100, 10], [150, 428]),
-                                               DummySprite([10, 400], [250, 28]),
-                                               DummySprite([1920, 50], [320, 480]),
-                                               DummySprite([100, 100], [320, 405]))
+        self.COLLIDABLES = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
+                                               Obstacle([100, 10], [150, 428]),
+                                               Obstacle([10, 400], [250, 28]),
+                                               Obstacle([1920, 50], [320, 480]),
+                                               Obstacle([100, 100], [320, 405]))
 
         # self.proj = pygame.sprite.Group()
-        self.dummy = DummySprite([10, 10], [0, 0])
+        self.dummy = Obstacle([10, 10], [0, 0])
         for player in self.players: player.collidables = self.COLLIDABLES
         self.MAP = Map([1000, 1000])
         # self.markers = pygame.sprite.Group()

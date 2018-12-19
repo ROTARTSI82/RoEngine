@@ -27,9 +27,9 @@ from data.states import *
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder
-__version__ = 'dev12.18.18'
+__version__ = 'dev12.19.18'
 __author__ = "Grant Yang <rotartsi0482@gmail.com>"
-__date__ = '18 December 2018'
+__date__ = '19 December 2018'
 
 
 class D12_11_18(Game):
@@ -44,7 +44,7 @@ class D12_11_18(Game):
         self.clear_surf = pygame.Surface(HUD_RES, SRCALPHA, 32)
 
         self.clock = pygame.time.Clock()
-        self.mouse_sprite = DummySprite([10, 10], [0, 0])
+        self.mouse_sprite = Obstacle([10, 10], [0, 0])
         self.mouse_pos = [0, 0]
 
         self.quit_bt = TextBt(Text("QUIT", size=(32, 32), bg=(255, 0, 0)))

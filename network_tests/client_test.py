@@ -53,11 +53,11 @@ class CustomGame(Game):
         self.cool = 1.0/16
         self.last_tick = 0
         self.event_que = []
-        self.obstacles = pygame.sprite.Group(DummySprite([100, 10], [100, 400]),
-                                               DummySprite([100, 10], [150, 428]),
-                                               DummySprite([10, 400], [250, 28]),
-                                               DummySprite([1920, 50], [320, 480]),
-                                               DummySprite([100, 100], [320, 405]))
+        self.obstacles = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
+                                             Obstacle([100, 10], [150, 428]),
+                                             Obstacle([10, 400], [250, 28]),
+                                             Obstacle([1920, 50], [320, 480]),
+                                             Obstacle([100, 100], [320, 405]))
 
     def tick_main(self):
         self.clock.tick(0)

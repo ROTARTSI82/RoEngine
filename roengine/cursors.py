@@ -72,7 +72,7 @@ clickable = [(24, 24), (6, 2)] + list(pygame.cursors.compile(_CLICKABLE_CURSOR))
 default = [(24, 24), (1, 1)] + list(pygame.cursors.compile(_DEFAULT_CURSOR))
 
 reticule = list(pygame.cursors.broken_x)
-reticule[1] = (8, 8)
+reticule[1] = (8, 8)  # The hotspot on the original is slightly off-center.
 
 arrow = pygame.cursors.arrow
 diamond = pygame.cursors.diamond

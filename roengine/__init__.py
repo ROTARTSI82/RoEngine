@@ -15,7 +15,7 @@ from .cursors import *
 from .maths import *
 from .crypto import *
 
-__all__ = ["Map", "DummySprite", "PlatformerPlayer", "Projectile", "GenericUDPClient", "GenericTCPClient", "Game",
+__all__ = ["Map", "Obstacle", "PlatformerPlayer", "Projectile", "GenericUDPClient", "GenericTCPClient", "Game",
            "GenericClientFactory", "reactor", "GenericUDPServer", "GenericTCPServer", "GenericServerFactory",
            "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton", "Weapon", "bullets", "Bullet",
            "Shotgun", "reticule", "thick_arrow", "clickable", "default", "reticule", "Action", "ActionManager",

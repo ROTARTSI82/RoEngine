@@ -2,7 +2,7 @@
 
 import pygame
 
-from roengine.util import DummySprite
+from roengine.util import Obstacle
 from roengine.gui import Text
 from pygame.locals import *
 
@@ -58,7 +58,7 @@ class Button(pygame.sprite.Sprite):
         if not self.clickable:
             return
         if mouse_sprite is None:
-            mouse_sprite = DummySprite([0, 0], pygame.mouse.get_pos())
+            mouse_sprite = Obstacle([0, 0], pygame.mouse.get_pos())
         hovering = pygame.sprite.spritecollide(mouse_sprite, self.self_group, False)
         if hovering:
             if event.type == MOUSEBUTTONDOWN:
