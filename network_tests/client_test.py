@@ -21,16 +21,18 @@ class CustomTCPClient(GenericTCPClient):
 
     def network_players_at(self, data):
         global game
-        self.tick_clock.tick(0)
-        game.my_pos = data['my_pos']
-        game.players = pygame.sprite.Group()
-        for i in data['players']:
-            game.players.add(DummyPlayer(i['pos'], float(i['rotation'])))
-        game.inp = data['inp']
+        self.tick_clock.empty_que(0)
+        print data['last'], game.n
+        if abs(data['last'] - game.n) <= 0: #or True:
+            game.my_pos = data['my_pos']
+            game.players = pygame.sprite.Group()
+            for i in data['players']:
+                game.players.add(DummyPlayer(i['pos'], float(i['rotation'])))
 
 
 class CustomGame(Game):
     screen, LISTENFOR, TYPELISTEN, MAP, players, my_pos, obstacles = [None, ] * 7
+    n=0
 
     def terminate(self, stop_args=()):
         self.running = False
@@ -39,6 +41,7 @@ class CustomGame(Game):
         reactor.stop()
 
     def start(self):
+        self.n=0
         pygame.init()
         self.inp = "Uninitiated"
         self.screen = pygame.display.set_mode([640, 480])
@@ -72,12 +75,9 @@ class CustomGame(Game):
         self.screen.blit(Text("Frame Rate: "+str(self.clock.get_fps()) + " fps").image, [10, 10])
         ping = factory.protocol_instance.tick_clock.get_fps() if factory.protocol_instance is not None else "Uninitiated"
         self.screen.blit(Text("Update Rate: " + str(ping) + " Hz").image, [10, 30])
-        if type(self.inp) != str:
-            self.inp['pos'] = pygame.mouse.get_pos()
-        self.screen.blit(Text("Input State: "+ str(self.inp), size=16).image, [10, 50])
         pygame.display.flip()
         if time.time()-self.last_tick > self.cool and self.event_que:
-            self.tick_clock.tick(0)
+            self.tick_clock.empty_que(0)
             # print self.event_que
             factory.enque_all({"action": "event",
                                "events": [event for event in self.event_que]})
@@ -86,9 +86,11 @@ class CustomGame(Game):
         for event in pygame.event.get():
             if event.type in self.TYPELISTEN:
                 if event.key in self.LISTENFOR:
-                    self.event_que.append({"type": event.type, "dict": {"key": event.key}})
+                    self.event_que.append({"type": event.type, "dict": {"key": event.key}, 'num': self.n})
+                    self.n += 1
             if event.type == pygame.MOUSEMOTION:
-                self.event_que.append({"type": pygame.MOUSEMOTION, "dict": {"pos": event.pos}})
+                self.event_que.append({"type": pygame.MOUSEMOTION, "dict": {"pos": event.pos}, 'num': self.n})
+                self.n += 1
             if event.type == pygame.QUIT:
                 self.terminate()
 

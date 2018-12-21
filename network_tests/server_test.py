@@ -79,6 +79,7 @@ class CustomGame(Game):
 
 class CustomProtocol(GenericTCPServer):
     player = Dummy()
+    last_in = 0
 
     def __init__(self):
         GenericTCPServer.__init__(self)
@@ -86,6 +87,7 @@ class CustomProtocol(GenericTCPServer):
 
     def network_event(self, data):
         for e in data['events']:
+            self.last_in += 1
             event = pygame.event.Event(e['type'], e['dict'])
             # print "GOT EVENT", event
             self.player.update_event(event)
@@ -102,7 +104,7 @@ class CustomProtocol(GenericTCPServer):
         self.player.update_rot(looking)
 
     def send_pos(self):
-        dat = {"action": "players_at", "my_pos": self.player.rect.center, "inp": self.player.input_state,
+        dat = {"action": "players_at", "my_pos": self.player.rect.center, "last": self.last_in,
                 "players": [{"pos": i.rect.center, "rotation": i.rotation} for i in game.players]
                }
         #print dat

@@ -133,6 +133,7 @@ class Weapon(object):
     actionManager = ActionManager()
 
     def __init__(self, dps, rof, bullet_class, parent, mag=40, reserve=190, reload_time=2, blume=(0, 0)):
+        self.id = 0
         self.dps = float(dps)
         self.rof = float(rof)
         self.cool = 1.0/rof
@@ -176,7 +177,7 @@ class Weapon(object):
             self.actionManager.do_action(self.reload_action, True)
             #print ("Activated action")
         self.actionManager.tick()
-        #self.clock.tick()
+        #self.clock.empty_que()
 
     def indp_fire(self, target_pos):
         if self.reserve > 0 and (self.reloading or self.ammo <= 0):

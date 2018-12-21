@@ -93,13 +93,13 @@ class Game(object):
 class Obstacle(pygame.sprite.Sprite):
     refract_blume = [2.0, 2.0]
 
-    def __init__(self, size, pos, lvl=1, cols=('+y', '-y', '+x', '-x')):
+    def __init__(self, size, pos, lvl=1, color=(0, 0, 0)):
         pygame.sprite.Sprite.__init__(self)
 
         self.climb_difficulty = lvl
-        self.collide_modes = cols
 
         self.image = pygame.Surface(size).convert()
+        self.image.fill(color)
         self.rect = self.image.get_rect()
         self.rect.center = pos
 

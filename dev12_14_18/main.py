@@ -1,5 +1,15 @@
 # -*- coding: UTF-8 -*-
 
+"""
+Components required for Multiplayer:
+ - PREDICTION: Client predicts what would happen (duh)
+ - RECONCILIATION: Client discards any packets from server if all inputs haven't been acknowledged.
+ - INTERPOLATION: Client plays back what it think the other player did to end up at current state
+
+ Server sends: Current game state + last input it processed.
+ Client sends: Input + input number
+ UDP connection? Packets may get lost...
+"""
 import logging
 import warnings
 import traceback
@@ -27,13 +37,14 @@ from data.states import *
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder
-__version__ = 'dev12.19.18'
+__version__ = 'dev12.20.18'
 __author__ = "Grant Yang <rotartsi0482@gmail.com>"
-__date__ = '19 December 2018'
+__date__ = '20 December 2018'
 
 
 class D12_11_18(Game):
     enter_test_mode, exit_test_mode, tick_test_mode = enter_test_mode, exit_test_mode, tick_test_mode
+    enter_mult_test, exit_mult_test, tick_mult_test = enter_mult_test, exit_mult_test, tick_mult_test
     def start(self):
         pygame.init()
         self.initiated = []
@@ -59,7 +70,13 @@ class D12_11_18(Game):
             self.update_state("test_mode")
         self.test_mode_bt.on_click_end = set_test_mode
 
-        self.main_menu_bts = pygame.sprite.Group(self.quit_bt, self.test_mode_bt)
+        self.mult_bt = TextBt(Text("Multiplayer Test", size=(32, 32), bg=(255, 0, 255)))
+        self.mult_bt.rect.center = HUD_RES[0] / 2, HUD_RES[1]/2+50
+        def set_mult_test(event):
+            self.update_state("mult_test")
+        self.mult_bt.on_click_end = set_mult_test
+
+        self.main_menu_bts = pygame.sprite.Group(self.quit_bt, self.test_mode_bt, self.mult_bt)
 
         self._state = 'main_menu'
         buttons.set_buttons(self.main_menu_bts.sprites())

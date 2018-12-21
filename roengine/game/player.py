@@ -26,6 +26,7 @@ class PlatformerPlayer(pygame.sprite.Sprite):
         self.climb_skill = 1
 
         self.grounded = False
+        self.firing = False
         self.bounds_checks = ('+y', '-x', '+x')
         self.term_y = 10
         self.bounds = None
@@ -59,6 +60,10 @@ class PlatformerPlayer(pygame.sprite.Sprite):
         # self.update_rect()
 
     def update_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            self.firing = True
+        if event.type == pygame.MOUSEBUTTONUP:
+            self.firing = False
         if event.type == pygame.KEYDOWN:
             if event.key in PLAYER_KEYBINDS['forward']:
                 self.input_state["forward"] = True

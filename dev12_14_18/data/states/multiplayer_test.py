@@ -4,6 +4,7 @@ import logging
 
 from dev12_14_18.data.characters.base import *
 from pygame.locals import *
+from roengine.net.cUDP import *
 from roengine import *
 from dev12_14_18.CONFIG import *
 
@@ -13,7 +14,35 @@ ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
 
-test_modeLogger = logging.getLogger('test_mode')
+test_modeLogger = logging.getLogger('mult_test')
+
+
+class Client(EnqueUDPClient):
+    def __init__(self, host, port, game):
+        EnqueUDPClient.__init__(self, host, port)
+        self.game = game
+        self.num = 0
+
+    def tick(self):
+        self.empty_que()
+
+    def network_bullets(self, msg, addr):
+        bullets._bullets = pygame.sprite.Group(*[Obstacle([10, 10], i) for i in msg['bullets']])
+
+    def network_players(self, msg, addr):
+        self.game.players = pygame.sprite.Group(*[Obstacle([16, 16], i, color=(0, 0, 255)) for i in msg['players']])
+
+    def network_self(self, msg, addr):
+        if msg['last'] >= self.num:
+            self.game.player.rect.center = msg['pos']
+            self.game.player.health = msg['hp']
+            self.game.player.update_pos()
+            self.game.player.mode = 'weapon' if msg['item'][0] == 'w' else 'ability'
+            if self.game.player.mode == 'weapon':
+                self.game.player.weapon = self.game.player.inv['weapon_'+msg['item'][1:]]
+                self.game.player.ammo = msg['amo']
+            if self.game.player.mode == 'ability':
+                self.game.player.ability = self.game.player.abilities['ability_'+msg['item'][1:]]
 
 
 def event_logger(self, event, exclude_events=(), include_events=()):
@@ -23,7 +52,9 @@ def event_logger(self, event, exclude_events=(), include_events=()):
         test_modeLogger.debug("Event%s: %s", event.type, event.dict)
 
 
-def enter_test_mode(self, old):
+def enter_mult_test(self, old):
+    self.client = Client('127.0.0.1', 3000, self)
+    self.client.load()
     self.TEST_MAP = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
                                         Obstacle([100, 10], [150, 428]),
                                         Obstacle([10, 400], [250, 28]),
@@ -32,6 +63,7 @@ def enter_test_mode(self, old):
                                         Obstacle([50, 400], [500, 400]))
 
     buttons.set_buttons([])
+    self.players = pygame.sprite.Group()
     self.player = BasicCharacter(self)
     self.map = Map([1500, 500])
     self.player.bounds = self.map.get_map()
@@ -58,22 +90,22 @@ def enter_test_mode(self, old):
     self.ammo_txt.rect.left = 100
     self.ammo_txt.rect.centery = 55
 
-    self.enemies = pygame.sprite.Group()
-    self.initiated.append('test_mode')
+    self.initiated.append('multiplayer_test')
+    #self.events = []
 
 
-def exit_test_mode(self, new):
+def exit_mult_test(self, new):
     if new == 'main_menu':
         buttons.set_buttons(self.main_menu_bts)
 
 
-def tick_test_mode(self):
-    self.clock.empty_que()
+def tick_mult_test(self):
+    self.clock.tick()
+    self.client.tick()
     pygame.display.set_caption(str(self.clock.get_fps()))
 
     self.player.update()
     bullets.update()
-    self.enemies.update(self.player)
 
     self.hp_bar.val = self.player.health
     self.hp_bar.update()
@@ -102,7 +134,7 @@ def tick_test_mode(self):
     self.map.fill([255, 255, 255])
     self.map.draw_group(self.TEST_MAP)
     self.map.draw_sprite(self.player)
-    self.map.draw_group(self.enemies)
+    self.map.draw_group(self.players)
     self.map.draw_group(bullets.get_group())
     self.map.get_scroll(self.player.rect.center, self.screen, (self.screen.get_width()/2,
                                                                self.screen.get_height()/2), (True, True))
@@ -114,7 +146,12 @@ def tick_test_mode(self):
     test_modeLogger.debug(str(self.clock.get_fps()))
     pygame.display.update(self.hud_layer.flush_rects() + self.map.flush_rects())
 
-    for event in pygame.event.get():
+    events = pygame.event.get()
+    if events:
+        self.client.num += 1
+        self.client.enque({"action": "event", "num": self.client.num,
+                           "events": [[i.type, i.dict] for i in events]})
+    for event in events:
         event_logger(self, event)
         self.player.update_event(event)
         self.universal_events(event)
@@ -131,12 +168,6 @@ def tick_test_mode(self):
                 self.player.health += 10
             if event.key == K_r and self.player.mode == 'weapon':
                 self.player.weapon.force_reload()
-            if event.key == K_e:
-                n = TargetDummy()
-                n.bounds = self.map.get_map()
-                n.collidables = self.TEST_MAP.copy()
-                bullets.shootables.add(n)
-                self.enemies.add(n)
             if event.key in ABVAL:
                 self.player.action_manager.do_action(weapon_switch, True)
                 self.player.ability = self.player.abilities[ABILITY_KEYBINDS[event.key]]

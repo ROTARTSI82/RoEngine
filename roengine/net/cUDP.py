@@ -28,13 +28,13 @@ class ServerUDP(object):
     def network_ping(self, msg):
         print ("PING from UDPServerProtocol")
 
-    def tick(self):
+    def empty_que(self):
         try:
             if self.send_que and self.factory is not None:
                 self.factory.transport.write(dump(self.send_que), self.address)
                 self.send_que = []
         except:
-            cUDPServProtLogger.exception("%s tick() failed.", self.address)
+            cUDPServProtLogger.exception("%s empty_que() failed.", self.address)
 
 
 class UDPServerFactory(DatagramProtocol):
@@ -53,9 +53,9 @@ class UDPServerFactory(DatagramProtocol):
         except:
             cUDPServerLogger.exception("%s _send() failed.", self.address)
 
-    def tick(self):
+    def empty_all(self):
         for cp in self.client_protocols.values():
-            cp.tick()
+            cp.empty_que()
 
     def load(self):
         reactor.listenUDP(self.port, self, interface=self.host)
@@ -128,7 +128,7 @@ class UDPServerFactory(DatagramProtocol):
             else:
                 cUDPServerLogger.info('%s Kicking Client%s: Game already full', self.address, addr)
                 np.enque({'action': 'kick', 'reason': 'Game already full'})
-                np.tick()
+                np.empty_que()
         else:
             cUDPServerLogger.critical('%s Client%s is already built!', self.address, addr)
 
@@ -224,14 +224,14 @@ class EnqueUDPClient(DatagramProtocol):
     def network_ping(self, msg, addr):
         print ("PING! from Client")
 
-    def tick(self):
+    def empty_que(self):
         try:
             if self.send_que:
                 self.transport.write(dump(self.send_que))
                 self.send_que = []
         except:
-            cUDPClientLogger.exception("%s tick() failed.", self.address)
-            # reactor.callLater(retry, self.tick, retry)
+            cUDPClientLogger.exception("%s empty_que() failed.", self.address)
+            # reactor.callLater(retry, self.empty_que, retry)
 
     def _send(self, message):
         if self.transport is not None:

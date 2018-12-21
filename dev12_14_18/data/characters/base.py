@@ -7,6 +7,7 @@ from dev12_14_18.data.weapons.weapons import *
 
 class Dash(Action):
     def __init__(self, player, game):
+        self.id = 1
         self.player = player
         self.game = game
         Action.__init__(self, 'ability', 5, 0, 5)
@@ -14,12 +15,13 @@ class Dash(Action):
     def __str__(self): return "Dash"
 
     def start(self):
-        self.player.position = pygame.math.Vector2(self.game.map.translate_pos(self.game.mouse_pos))
+        self.player.position = pygame.math.Vector2(self.player.aiming_at)
         self.player.update_rect()
 
 
 class Flight(Action):
     def __init__(self, player, game):
+        self.id = 2
         self.player = player
         self.game = game
         Action.__init__(self, 'ability', 4, 5, 30)
@@ -27,7 +29,7 @@ class Flight(Action):
     def __str__(self): return "Flight"
 
     def tick(self):
-        self.player.position = pygame.math.Vector2(self.game.map.translate_pos(self.game.mouse_pos))
+        self.player.position = pygame.math.Vector2(self.player.aiming_at)
         self.player.update_rect()
 
 
@@ -48,7 +50,7 @@ class BasicCharacter(PlatformerPlayer):
         self.inv = {'weapon_1': SMG(*WArgs), 'weapon_2': AssaultRifle(*WArgs), 'weapon_3': AutomaticShotgun(*WArgs),
                     'weapon_4': Sniper(*WArgs)}
         self.abilities = {'ability_1': Dash(self, self.game), 'ability_2': Flight(self, self.game)}
-        self.ability = ['ability_1']
+        self.ability = self.abilities['ability_1']
         self.mode = 'weapon'
         self.weapon = self.inv['weapon_1']
 
@@ -70,13 +72,15 @@ class TargetDummy(PlatformerPlayer):
     def __init__(self):
         PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
         self.image.fill([255, 0, 0])
-        self.health = 75
+        self.health = 100
         self.defense = 1
         self.speed = 3
 
     def damage(self, damage, bullet):
         bullet.req_kill()
         self.health -= damage * self.defense
+        if self.health <= 0:
+            self.req_kill()
 
     def req_kill(self):
         self.kill()
@@ -89,6 +93,3 @@ class TargetDummy(PlatformerPlayer):
             self.input_state['forward'] = True
         elif player.rect.x < self.rect.x:
             self.input_state['backward'] = True
-
-        if self.health <= 0:
-            self.req_kill()

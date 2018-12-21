@@ -101,7 +101,7 @@ if __name__ == "__main__":
     running = True
     while running:
         screen.fill([255, 255, 255])
-        manager.tick()
+        manager.empty_que()
         screen.blit(Text(str(manager.action_duration-manager.progress)).image, [10,10])
         screen.blit(Text(str(a0.get_cooldown())).image, [10, 100])
         screen.blit(Text(str(a1.get_cooldown())).image, [10, 200])

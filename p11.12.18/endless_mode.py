@@ -216,7 +216,7 @@ class G111218(Game):
 
     def tick_main(self, *args, **kwargs):
         global MAX_ENEMIES
-        self.clock.tick()
+        self.clock.empty_que()
         # pygame.display.set_caption(str(self.clock.get_fps()))
         self.MAP.fill([255, 255, 255])
         self.MAP.draw_group(self.COLLIDABLES)
@@ -273,7 +273,7 @@ class G111218(Game):
             self.enemies.add(ne)
             logger.info("Spawning new enemy... (is_shooter: %s)", ne.shooter)
             self.SHOOTABLES.add(ne)
-        if popups.tick():
+        if popups.empty_que():
             self.firing = False
             self.player.input_state = {"forward": False, "backward": False, "jump": False}
             return
