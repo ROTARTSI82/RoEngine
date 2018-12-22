@@ -68,7 +68,7 @@ def exit_test_mode(self, new):
 
 
 def tick_test_mode(self):
-    self.clock.empty_que()
+    self.clock.tick()
     pygame.display.set_caption(str(self.clock.get_fps()))
 
     self.player.update()

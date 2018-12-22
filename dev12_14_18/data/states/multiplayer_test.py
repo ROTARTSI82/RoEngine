@@ -21,7 +21,6 @@ class Client(EnqueUDPClient):
     def __init__(self, host, port, game):
         EnqueUDPClient.__init__(self, host, port)
         self.game = game
-        self.num = 0
 
     def tick(self):
         self.empty_que()
@@ -33,16 +32,16 @@ class Client(EnqueUDPClient):
         self.game.players = pygame.sprite.Group(*[Obstacle([16, 16], i, color=(0, 0, 255)) for i in msg['players']])
 
     def network_self(self, msg, addr):
-        if msg['last'] >= self.num:
-            self.game.player.rect.center = msg['pos']
-            self.game.player.health = msg['hp']
-            self.game.player.update_pos()
-            self.game.player.mode = 'weapon' if msg['item'][0] == 'w' else 'ability'
-            if self.game.player.mode == 'weapon':
-                self.game.player.weapon = self.game.player.inv['weapon_'+msg['item'][1:]]
-                self.game.player.ammo = msg['amo']
-            if self.game.player.mode == 'ability':
-                self.game.player.ability = self.game.player.abilities['ability_'+msg['item'][1:]]
+        self.game.player.kills = msg['kills']
+        self.game.player.rect.center = msg['pos']
+        self.game.player.health = msg['hp']
+        self.game.player.update_pos()
+        self.game.player.mode = 'weapon' if msg['item'][0] == 'w' else 'ability'
+        if self.game.player.mode == 'weapon':
+            self.game.player.weapon = self.game.player.inv['weapon_'+msg['item'][1:]]
+            self.game.player.ammo = msg['ammo']
+        if self.game.player.mode == 'ability':
+            self.game.player.ability = self.game.player.abilities['ability_'+msg['item'][1:]]
 
 
 def event_logger(self, event, exclude_events=(), include_events=()):
@@ -86,12 +85,15 @@ def enter_mult_test(self, old):
     self.hp_txt = Text("Health: " + str(self.player.health))
     self.hp_txt.rect.center = self.hp_bar.rect.center
 
+    self.kill_txt = Text("Kills: 0", bg=(255, 255, 255))
+    self.kill_txt.rect.centerx = HUD_RES[0]/2
+    self.kill_txt.rect.top = self.weapon_txt.rect.bottom + 5
+
     self.ammo_txt = Text(str(self.player.weapon.ammo) + '/inf', bg=(255, 255, 255))
     self.ammo_txt.rect.left = 100
     self.ammo_txt.rect.centery = 55
 
     self.initiated.append('multiplayer_test')
-    #self.events = []
 
 
 def exit_mult_test(self, new):
@@ -110,6 +112,7 @@ def tick_mult_test(self):
     self.hp_bar.val = self.player.health
     self.hp_bar.update()
     self.hp_txt.update_text("Health: " + str(self.player.health))
+    self.kill_txt.update_text("Kills: "+str(self.player.kills))
     if self.player.mode == 'weapon':
         self.reload_progress = "%.1f"%(self.player.action_manager.action_duration - self.player.action_manager.progress)
         self.reload_txt.update_text(self.reload_progress)
@@ -122,6 +125,7 @@ def tick_mult_test(self):
 
     self.hud_layer._map = self.clear_surf.copy()
     self.hud_layer.draw_group(buttons.visible_bts)
+    self.hud_layer.draw_sprite(self.kill_txt)
     self.hud_layer.draw_sprite(self.hp_bar)
     self.hud_layer.draw_sprite(self.hp_txt)
     if self.ammo_txt.text != '0.0':
@@ -146,22 +150,27 @@ def tick_mult_test(self):
     test_modeLogger.debug(str(self.clock.get_fps()))
     pygame.display.update(self.hud_layer.flush_rects() + self.map.flush_rects())
 
-    events = pygame.event.get()
-    if events:
-        self.client.num += 1
-        self.client.enque({"action": "event", "num": self.client.num,
-                           "events": [[i.type, i.dict] for i in events]})
-    for event in events:
+    send = []
+    for event in pygame.event.get():
         event_logger(self, event)
         self.player.update_event(event)
         self.universal_events(event)
+        sdict = event.dict.copy()
+        if 'pos' in sdict:
+            sdict['pos'] = self.map.translate_pos(sdict['pos'])
         if event.type == MOUSEMOTION:
-            self.player.aiming_at = self.map.translate_pos(event.pos)
+            send.append([event.type, {"pos": sdict['pos']}])
+            self.player.aiming_at = sdict['pos']
         if event.type == MOUSEBUTTONDOWN:
+            send.append([event.type, {"button": event.button}])
             self.player.firing = True
         if event.type == MOUSEBUTTONUP:
+            send.append([event.type, {"button": event.button}])
             self.player.firing = False
+        if event.type == KEYUP:
+            send.append([event.type, {"key": event.key}])
         if event.type == KEYDOWN:
+            send.append([event.type, {"key": event.key}])
             if event.key == K_DOWN:
                 self.player.health -= 10
             if event.key == K_UP:
@@ -172,13 +181,13 @@ def tick_mult_test(self):
                 self.player.action_manager.do_action(weapon_switch, True)
                 self.player.ability = self.player.abilities[ABILITY_KEYBINDS[event.key]]
                 self.player.mode = 'ability'
-                # self.logger.debug('ABILITY switching to %s', str(self.player.ability))
                 self.weapon_txt.update_text("Ability: " + str(self.player.ability))
             if event.key in VAL:
                 self.player.action_manager.do_action(weapon_switch, True)
                 self.player.weapon = self.player.inv[WEAPON_KEYBINDS[event.key]]
                 self.player.mode = 'weapon'
-                # self.logger.debug('WEAPON switching to %s', str(self.player.weapon))
                 self.weapon_txt.update_text("Item: " + str(self.player.weapon))
             if event.key == K_b:
                 self.update_state('main_menu')
+    if send:
+        self.client.enque({"action": "event", "events": send})

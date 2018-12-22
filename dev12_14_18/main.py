@@ -129,7 +129,7 @@ if __name__ == '__main__':
     logging.captureWarnings(True)
     root = logging.getLogger()
     logger = logging.getLogger('main')
-    logger.setLevel(logging.DEBUG)
+    root.setLevel(logging.DEBUG)
     for handler in generic_logging.handlers:
         root.addHandler(handler)
     sys.excepthook = exception_handler

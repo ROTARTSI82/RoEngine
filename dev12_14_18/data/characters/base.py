@@ -38,6 +38,7 @@ class BasicCharacter(PlatformerPlayer):
         PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
         self.image.fill([0, 0, 255])
         self.health = 100
+        self.kills = 0
         self.defense = 1
 
         self.game = game
@@ -57,6 +58,11 @@ class BasicCharacter(PlatformerPlayer):
     def damage(self, damage, bullet):
         bullet.req_kill()
         self.health -= damage * self.defense
+        if self.health <= 0:
+            bullet.parent.kills += 1
+            self.health = 100
+            self.rect.center = [0, 0]
+            self.update_pos()
 
     def update(self):
         self.action_manager.tick()
