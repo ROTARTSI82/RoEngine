@@ -2,6 +2,9 @@
 import pygame
 import numpy
 import random
+import wave
+
+from roengine.util import Dummy
 
 BITS = 16
 SAMPLE_RATE = 44100
@@ -9,6 +12,7 @@ CHANNELS = 2
 MAX_SAMPLE = 2 ** (BITS - 1) - 1
 
 NOTES = {
+    'REST': 0,
     'A#0': 29.14,
     'A#1': 58.27,
     'A#2': 116.54,
@@ -177,20 +181,19 @@ def pre_init():
     pygame.mixer.pre_init(SAMPLE_RATE, -BITS, CHANNELS)
 
 
-def get_freq(left, right, duration):
+def get_stereo(left, right, duration):
     sample_num = int(round(SAMPLE_RATE*duration))
     ret = numpy.zeros((sample_num, 2), dtype=numpy.int16)
-
     for i in range(sample_num):
         ret[i][0] = get_sample(left, i)
         ret[i][1] = get_sample(right, i)
-    return pygame.sndarray.make_sound(ret)
+    return pygame.sndarray.make_sound(ret), ret
 
 
 def get_mono(hz, duration):
     sample_num = int(round(SAMPLE_RATE * duration))
     ret = numpy.array([get_sample(hz, i) for i in range(sample_num)], dtype=numpy.int16)
-    return pygame.sndarray.make_sound(ret)
+    return pygame.sndarray.make_sound(ret), ret
 
 
 def get_sample(freq, x):
@@ -199,22 +202,90 @@ def get_sample(freq, x):
 
 def add_static(sound, amount):
     array = pygame.sndarray.samples(sound)
-    for i in range(len(array)):
-        array[i] += random.randint(-amount, amount)
+    if CHANNELS == 2:
+        for i in range(len(array)):
+                array[i][0] += random.randint(-amount, amount)
+                array[i][1] += random.randint(-amount, amount)
+    else:  # Don't run the if every loop. That's dumb.
+        for i in range(len(array)):
+            array[i] += random.randint(-amount, amount)
 
 
-def get_static(duration):
+def get_mono_static(duration):
     max_val = 2 ** (BITS - 1) - 1
     min_val = -(2 ** BITS)
     sample_num = int(round(SAMPLE_RATE * duration))
     ret = numpy.array([random.randint(min_val, max_val) for i in range(sample_num)], dtype=numpy.int16)
-    return pygame.sndarray.make_sound(ret)
+    return pygame.sndarray.make_sound(ret), ret
 
+
+def get_stereo_static(duration):
+    max_val = 2 ** (BITS - 1) - 1
+    min_val = -(2 ** BITS)
+    sample_num = int(round(SAMPLE_RATE * duration))
+    ret = numpy.zeros((sample_num, 2), dtype=numpy.int16)
+    for i in range(sample_num):
+        ret[i][0] = random.randint(min_val, max_val)
+        ret[i][1] = random.randint(min_val, max_val)
+    return pygame.sndarray.make_sound(ret), ret
+
+
+def save_sound(snd, filename):
+    fileproc = wave.open(filename, 'w')
+    fileproc.setframerate(SAMPLE_RATE)
+    fileproc.setnchannels(CHANNELS)
+    fileproc.setsampwidth(2)
+    fileproc.writeframesraw(snd.get_raw())
+    fileproc.close()
+
+
+class MusicPlayer(object):
+    def __init__(self, array):
+        self.array = array
+        self.sound = Dummy()
+        self.compiled = []
+        self.build()
+
+    def sync_play(self):
+        for note in self.array:
+            if CHANNELS == 1:
+                _sound = get_mono(NOTES[note[0][0]], note[1])[0]
+            else:
+                _sound = get_stereo(NOTES[note[0][0]], NOTES[note[0][1]], note[1])[0]
+            _sound.play(-1)
+            pygame.time.wait(int(note[1]*1000))
+            _sound.stop()
+            pygame.time.wait(int(note[2]*1000))
+
+    def play(self):
+        self.sound.play()
+
+    def build(self):
+        ret = numpy.array([], dtype=numpy.int16)
+        for note in self.array:
+            sound = get_mono(NOTES[note[0][0]], note[1])[1] if CHANNELS == 1 else \
+                    get_stereo(NOTES[note[0][0]], NOTES[note[0][1]], note[1])[1]
+            ret = sound.copy() if len(ret) == 0 else numpy.append(ret, sound, axis=0)
+            wait = numpy.array([0, ] * int(round(SAMPLE_RATE * note[2])), dtype=numpy.int16) if CHANNELS == 1 else \
+                   numpy.array([[0, 0], ] * int(round(SAMPLE_RATE * note[2])), dtype=numpy.int16)
+            if len(wait) > 0:
+                ret = wait.copy() if len(ret) == 0 else numpy.append(ret, wait, axis=0)
+        self.compiled = ret
+        self.sound = pygame.sndarray.make_sound(ret)
 
 pre_init()
 pygame.init()
 pygame.mixer.init()
-test = get_static(1)
-test.play(-1)
-pygame.time.wait(10000)
-pygame.quit()
+def rest(t):
+    return [['REST', 'REST'], t, 0]
+
+r = rest(0.25)
+twinkle = MusicPlayer([[['C4']*2, 0.25, 0.25], [['C4']*2, 0.25, 0.25], [['G4']*2, 0.25, 0.25], [['G4']*2, 0.25, 0.25],
+                       [['A4']*2, 0.25, 0.25],
+                       [['A4']*2, 0.25, 0.25], [['G4']*2, 0.25, 0.5], [['F4']*2, 0.25, 0.25], [['F4']*2, 0.25, 0.25],
+                       [['E4']*2, 0.25, 0.25], [['E4']*2, 0.25, 0.25], [['D4']*2, 0.25, 0.25], [['D4']*2, 0.25, 0.25],
+                       [['C4']*2, 0.25, 0.25],
+                       rest(0.5)])
+twinkle.play()
+while pygame.mixer.get_busy():
+    pass # keep program alive while twinkle is playing
