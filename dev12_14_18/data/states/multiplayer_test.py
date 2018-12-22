@@ -28,6 +28,10 @@ class Client(EnqueUDPClient):
     def network_bullets(self, msg, addr):
         bullets._bullets = pygame.sprite.Group(*[Obstacle([10, 10], i) for i in msg['bullets']])
 
+    def network_settings(self, msg, addr):
+        # Update settings. No settings to update as of right now.
+        pass
+
     def network_players(self, msg, addr):
         self.game.players = pygame.sprite.Group(*[Obstacle([16, 16], i, color=(0, 0, 255)) for i in msg['players']])
 
@@ -147,7 +151,7 @@ def tick_mult_test(self):
     self.screen.fill([255, 255, 255])
     self.map.blit_to(self.screen)
     self.hud_layer.blit_to(self.screen)
-    test_modeLogger.debug(str(self.clock.get_fps()))
+    # test_modeLogger.debug(str(self.clock.get_fps()))
     pygame.display.update(self.hud_layer.flush_rects() + self.map.flush_rects())
 
     send = []

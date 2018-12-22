@@ -9,6 +9,7 @@ from roengine.util import Dummy
 BITS = 16
 SAMPLE_RATE = 44100
 CHANNELS = 2
+ZERO_RANGE = 100
 MAX_SAMPLE = 2 ** (BITS - 1) - 1
 
 NOTES = {
@@ -183,16 +184,29 @@ def pre_init():
 
 def get_stereo(left, right, duration):
     sample_num = int(round(SAMPLE_RATE*duration))
-    ret = numpy.zeros((sample_num, 2), dtype=numpy.int16)
+    array = []
     for i in range(sample_num):
-        ret[i][0] = get_sample(left, i)
-        ret[i][1] = get_sample(right, i)
+        array.append([get_sample(left, i), get_sample(right, i)])
+    while (not (-ZERO_RANGE) <= array[sample_num-1][0] <= ZERO_RANGE) or \
+            (not (-ZERO_RANGE) <= array[sample_num-1][1] <= ZERO_RANGE):
+        ap = [0, 0]
+        if array[sample_num-1][0] != 0:
+            ap[0] = get_sample(left, sample_num)
+        if array[sample_num-1][1] != 0:
+            ap[1] = get_sample(right, sample_num)
+        sample_num += 1
+        array.append(ap)
+    ret = numpy.array(array, dtype=numpy.int16)
     return pygame.sndarray.make_sound(ret), ret
 
 
 def get_mono(hz, duration):
     sample_num = int(round(SAMPLE_RATE * duration))
-    ret = numpy.array([get_sample(hz, i) for i in range(sample_num)], dtype=numpy.int16)
+    array = [get_sample(hz, i) for i in range(sample_num)]
+    while not (-ZERO_RANGE) <= array[-1] <= ZERO_RANGE:
+        array.append(get_sample(hz, sample_num))
+        sample_num += 1
+    ret = numpy.array(array, dtype=numpy.int16)
     return pygame.sndarray.make_sound(ret), ret
 
 

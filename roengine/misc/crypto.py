@@ -8,7 +8,7 @@ import binascii
 import hmac as hmac_module
 import subprocess
 
-from roengine.maths import gcf
+from roengine.misc.maths import gcf
 
 __all__ = ('RSAGenerator', 'hmac', 'User', 'AccountManager', 'is_prime_openssl')
 

@@ -9,11 +9,11 @@ from .game import *
 from .net import *
 from .util import *
 from .gui import *
-from .cursors import *
+from roengine.misc.cursors import *
 
 # NOTE: The following imports are unused
-from .maths import *
-from .crypto import *
+from roengine.misc.maths import *
+from roengine.misc.crypto import *
 
 __all__ = ["Map", "Obstacle", "PlatformerPlayer", "Projectile", "GenericUDPClient", "GenericTCPClient", "Game",
            "GenericClientFactory", "reactor", "GenericUDPServer", "GenericTCPServer", "GenericServerFactory",

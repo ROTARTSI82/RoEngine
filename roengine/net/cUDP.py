@@ -128,12 +128,14 @@ class UDPServerFactory(DatagramProtocol):
                 self.clients.append(addr)
                 self.client_protocols[addr] = np
                 cUDPServerLogger.info('%s Successfully built Client%s', self.address, addr)
+                return True
             else:
                 cUDPServerLogger.info('%s Kicking Client%s: Game already full', self.address, addr)
                 np.enque({'action': 'kick', 'reason': 'Game already full'})
                 np.empty_que()
         else:
             cUDPServerLogger.critical('%s Client%s is already built!', self.address, addr)
+        return False
 
     def network_verify_send(self, message, address):
         message['action'] = 'confirm_arrival'
@@ -141,7 +143,7 @@ class UDPServerFactory(DatagramProtocol):
         cUDPServerLogger.info("%s verify_send%s", self.address, (message, address))
         try:
             if hasattr(self.client_protocols[address], "network_" + message['data']["action"]):
-                getattr(self.client_protocols[address], "network_" + message['data']["action"])(message)
+                getattr(self.client_protocols[address], "network_" + message['data']["action"])(message['data'])
             elif LOG_NO_HANDLERS:
                 cUDPServerLogger.critical('%s Got packet without handler: %s', self.address, message)
         except Exception as e:
@@ -149,7 +151,7 @@ class UDPServerFactory(DatagramProtocol):
                                        address, message)
         try:
             if hasattr(self, "network_" + message['data']["action"]):
-                getattr(self, "network_" + message['data']["action"])(message, address)
+                getattr(self, "network_" + message['data']["action"])(message['data'], address)
             elif LOG_NO_HANDLERS:
                 cUDPServerLogger.critical('%s Got packet without handler: %s', self.address, message)
         except Exception as e:
@@ -176,7 +178,7 @@ class UDPServerFactory(DatagramProtocol):
         self.arrivals_confirmed[message['id']] = True
         try:
             if hasattr(self, "verified_" + message["data"]["action"]):
-                getattr(self, "verified_" + message["data"]["action"])(message, address)
+                getattr(self, "verified_" + message["data"]["action"])(message['data'], address)
             elif LOG_NO_HANDLERS:
                 cUDPServerLogger.critical('%s Got packet without verified_ handler: %s', self.address, message)
         except Exception as e:
@@ -184,7 +186,8 @@ class UDPServerFactory(DatagramProtocol):
 
         try:
             if hasattr(self.client_protocols[address], "verified_" + message["data"]["action"]):
-                getattr(self.client_protocols[address], "verified_" + message["data"]["action"])(message, address)
+                getattr(self.client_protocols[address],
+                        "verified_" + message["data"]["action"])(message['data'], address)
             elif LOG_NO_HANDLERS:
                 cUDPServerLogger.critical('%s Got packet without verified_ handler: %s', self.address, message)
         except Exception as e:
@@ -267,7 +270,7 @@ class EnqueUDPClient(DatagramProtocol):
         self.arrivals_confirmed[message['id']] = True
         try:
             if hasattr(self, "verified_" + message["data"]["action"]):
-                getattr(self, "verified_" + message["data"]["action"])(message, address)
+                getattr(self, "verified_" + message["data"]["action"])(message['data'], address)
             elif LOG_NO_HANDLERS:
                 cUDPClientLogger.critical('%s Got packet without handler: %s', self.address, message)
         except Exception as e:
@@ -277,8 +280,8 @@ class EnqueUDPClient(DatagramProtocol):
         message['action'] = 'confirm_arrival'
         self.enque(message)
         try:
-            if hasattr(self.server_protocols[address], "network_" + message['data']["action"]):
-                getattr(self.server_protocols[address], "network_" + message['data']["action"])(message)
+            if hasattr(self, "network_" + message['data']["action"]):
+                getattr(self, "network_" + message['data']["action"])(message['data'], address)
             elif LOG_NO_HANDLERS:
                 cUDPClientLogger.critical('%s Got packet without handler: %s', self.address, message)
         except Exception as e:

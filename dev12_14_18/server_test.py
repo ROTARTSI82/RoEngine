@@ -15,7 +15,7 @@ root.setLevel(logging.DEBUG)
 hdlr = logging.StreamHandler(sys.stdout)
 hdlr.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s|%(name)s] [%(filename)s:%(lineno)d/%(levelname)s]: %(message)s',
-                                  '%H:%M:%S')
+                              '%H:%M:%S')
 hdlr.setFormatter(formatter)
 root.addHandler(hdlr)
 
@@ -184,6 +184,11 @@ class MyFactory(UDPServerFactory):
     def __init__(self, host, port, max, game):
         self.game = game
         UDPServerFactory.__init__(self, host, port, max)
+
+    def build_protocol(self, addr):
+        if UDPServerFactory.build_protocol(self, addr):
+            # This does nothing right now, but might be useful later
+            self.verify_send({"action": "settings"}, addr)
 
 
 if __name__ == "__main__":
