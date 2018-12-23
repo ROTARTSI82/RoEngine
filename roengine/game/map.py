@@ -7,23 +7,19 @@ class Map(object):
     def __init__(self, size):
         self._map = pygame.Surface(size).convert()
         self.scaled = self._map
-        self.rects = []
         self._scroll = [0, 0]
 
     def blit(self, *args, **kwargs):
-        self.rects.append(self._map.blit(*args, **kwargs))
+        self._map.blit(*args, **kwargs)
 
     def draw_sprite(self, obj):
-        self.rects.append(self._map.blit(obj.image, obj.rect))
+        self._map.blit(obj.image, obj.rect)
 
     def fill(self, color):
         self._map.fill(color)
 
-    def draw_group(self, group, get_rects=True):
-        if not get_rects:
-            return group.draw(self._map)
-        for sprite in group:
-            self.rects.append(self._map.blit(sprite.image, sprite.rect))
+    def draw_group(self, group):
+        return group.draw(self._map)
 
     def scale_to(self, screen, multiplier):
         self.scaled = pygame.transform.scale(self._map, (int(screen.get_width() * multiplier[0]),
@@ -53,13 +49,6 @@ class Map(object):
         ret = [(pos[0] - self._scroll[0]) * self._map.get_width() / self.scaled.get_width(),
                (pos[1] - self._scroll[1]) * self._map.get_height() / self.scaled.get_height()]
         return ret
-
-    def flush_rects(self):
-        if self.rects:
-            ret = self.rects
-            self.rects = []
-            return ret
-        return []
 
     def get_pos(self, pos):
         ret = [pos[0] * self.scaled.get_width() / self._map.get_width() + self._scroll[0],

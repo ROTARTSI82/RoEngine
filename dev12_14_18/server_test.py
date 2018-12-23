@@ -25,6 +25,8 @@ ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
 
+__version__ = 'dev12.22.13'
+
 test_modeLogger = logging.getLogger('server_test')
 
 
@@ -39,6 +41,7 @@ class ServerTest(Game):
     def start(self):
         pygame.init()
         self.screen = pygame.display.set_mode([640, 480])
+        self.update_rects([640, 480])
         self.mouse_sprite = Obstacle([10, 10], [0, 0])
         self.mouse_pos = [0, 0]
         self.clock = pygame.time.Clock()
@@ -67,6 +70,30 @@ class ServerTest(Game):
             self.mouse_sprite.rect.center = self.hud_layer.translate_pos(self.mouse_pos)
         if event.type == QUIT:
             self.terminate()
+
+    def update_rects(self, size):
+        middle = size[0] / 2, size[1] / 2
+        self.quad_rects = [pygame.rect.Rect((0, 0), middle), pygame.rect.Rect((middle[0], 0), middle),
+                           pygame.rect.Rect(middle, middle), pygame.rect.Rect((0, middle[1]), middle)]
+        self.half_y_rects = [pygame.rect.Rect((0, 0), (size[0], middle[1])),
+                             pygame.rect.Rect((0, middle[1]), (size[0], middle[1]))]
+        self.half_x_rects = [pygame.rect.Rect((0, 0), (middle[0], size[1])),
+                             pygame.rect.Rect((middle[0], 0), (middle[0], size[1]))]
+        self.whole_rect = [pygame.rect.Rect(size, size)]
+        self.rects = getattr(self, RECT_MODE)
+        self.rect_len = len(self.rects) - 1
+        self.current_rect = self.rects[0]
+        self.rect_index = 0
+
+    def tick_rect(self):
+        if self.rect_index == self.rect_len:
+            self.rect_index = 0
+        else:
+            self.rect_index += 1
+        self.current_rect = self.rects[self.rect_index]
+
+    def global_tick(self):
+        self.tick_rect()
 
     def event_logger(self, event, exclude_events=(), include_events=()):
         if event.type in exclude_events:
@@ -117,7 +144,7 @@ class ServerTest(Game):
 
         self.screen.fill([255, 255, 255])
         self.map.blit_to(self.screen)
-        pygame.display.update(self.hud_layer.flush_rects() + self.map.flush_rects())
+        pygame.display.update(self.current_rect)
 
         for event in pygame.event.get():
             event_logger(self, event)
@@ -188,7 +215,7 @@ class MyFactory(UDPServerFactory):
     def build_protocol(self, addr):
         if UDPServerFactory.build_protocol(self, addr):
             # This does nothing right now, but might be useful later
-            self.verify_send({"action": "settings"}, addr)
+            self.verify_send({"action": "settings", "ver": __version__}, addr)
 
 
 if __name__ == "__main__":

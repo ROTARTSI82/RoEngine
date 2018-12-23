@@ -76,8 +76,12 @@ class Game(object):
     def start(self, *args, **kwargs):
         self.running = True
 
+    def global_tick(self):
+        pass
+
     def _call_tick(self, *args, **kwargs):
         if self.running:
+            self.global_tick()
             if hasattr(self, "tick_"+self._state):
                 getattr(self, "tick_"+self._state)(*args, **kwargs)
             else:

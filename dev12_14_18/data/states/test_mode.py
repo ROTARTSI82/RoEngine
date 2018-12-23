@@ -112,7 +112,7 @@ def tick_test_mode(self):
     self.map.blit_to(self.screen)
     self.hud_layer.blit_to(self.screen)
     test_modeLogger.debug(str(self.clock.get_fps()))
-    pygame.display.update(self.hud_layer.flush_rects() + self.map.flush_rects())
+    pygame.display.update(self.current_rect)
 
     for event in pygame.event.get():
         event_logger(self, event)

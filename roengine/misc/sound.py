@@ -3,14 +3,18 @@ import pygame
 import numpy
 import random
 import wave
+import logging
 
 from roengine.util import Dummy
 
 BITS = 16
 SAMPLE_RATE = 44100
 CHANNELS = 2
-ZERO_RANGE = 100
+ZERO_RANGE = 500
+AVERAGE = 0.127056277263  # Average after 10 trails with 250ms notes and rests
 MAX_SAMPLE = 2 ** (BITS - 1) - 1
+
+logger = logging.getLogger('sound')
 
 NOTES = {
     'REST': 0,
@@ -187,6 +191,7 @@ def get_stereo(left, right, duration):
     array = []
     for i in range(sample_num):
         array.append([get_sample(left, i), get_sample(right, i)])
+    # Make sure that the last item is around 0
     while (not (-ZERO_RANGE) <= array[sample_num-1][0] <= ZERO_RANGE) or \
             (not (-ZERO_RANGE) <= array[sample_num-1][1] <= ZERO_RANGE):
         ap = [0, 0]
@@ -203,6 +208,7 @@ def get_stereo(left, right, duration):
 def get_mono(hz, duration):
     sample_num = int(round(SAMPLE_RATE * duration))
     array = [get_sample(hz, i) for i in range(sample_num)]
+    # Make sure that the last item is around 0
     while not (-ZERO_RANGE) <= array[-1] <= ZERO_RANGE:
         array.append(get_sample(hz, sample_num))
         sample_num += 1
@@ -263,8 +269,10 @@ class MusicPlayer(object):
     def sync_play(self):
         for note in self.array:
             if CHANNELS == 1:
+                print ("Playing %s" % note[0][0])
                 _sound = get_mono(NOTES[note[0][0]], note[1])[0]
             else:
+                print ("Playing (Left=%s Right=%s)" % (note[0][0], note[0][1]))
                 _sound = get_stereo(NOTES[note[0][0]], NOTES[note[0][1]], note[1])[0]
             _sound.play(-1)
             pygame.time.wait(int(note[1]*1000))
@@ -275,6 +283,7 @@ class MusicPlayer(object):
         self.sound.play()
 
     def build(self):
+        logger.info("Building... (ETA: %s)", len(self.array)*AVERAGE)
         ret = numpy.array([], dtype=numpy.int16)
         for note in self.array:
             sound = get_mono(NOTES[note[0][0]], note[1])[1] if CHANNELS == 1 else \
@@ -286,20 +295,20 @@ class MusicPlayer(object):
                 ret = wait.copy() if len(ret) == 0 else numpy.append(ret, wait, axis=0)
         self.compiled = ret
         self.sound = pygame.sndarray.make_sound(ret)
+        logging.info("Compile finished!")
+
+import sys
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
+hdlr = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('[%(asctime)s|%(name)s] [%(filename)s:%(lineno)d/%(levelname)s]: %(message)s',
+                              '%H:%M:%S')  # Should we write the channel?
+hdlr.setFormatter(formatter)
+root.addHandler(hdlr)
 
 pre_init()
 pygame.init()
-pygame.mixer.init()
-def rest(t):
-    return [['REST', 'REST'], t, 0]
-
-r = rest(0.25)
-twinkle = MusicPlayer([[['C4']*2, 0.25, 0.25], [['C4']*2, 0.25, 0.25], [['G4']*2, 0.25, 0.25], [['G4']*2, 0.25, 0.25],
-                       [['A4']*2, 0.25, 0.25],
-                       [['A4']*2, 0.25, 0.25], [['G4']*2, 0.25, 0.5], [['F4']*2, 0.25, 0.25], [['F4']*2, 0.25, 0.25],
-                       [['E4']*2, 0.25, 0.25], [['E4']*2, 0.25, 0.25], [['D4']*2, 0.25, 0.25], [['D4']*2, 0.25, 0.25],
-                       [['C4']*2, 0.25, 0.25],
-                       rest(0.5)])
-twinkle.play()
+test = MusicPlayer([[[i, i], 0.25, 0.25] for i in NOTES.keys()])
+test.play()
 while pygame.mixer.get_busy():
-    pass # keep program alive while twinkle is playing
+    pass

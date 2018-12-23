@@ -16,6 +16,8 @@ weapon_switch = Action('player', 10, 0)
 
 test_modeLogger = logging.getLogger('mult_test')
 
+VALID_SERV_VER = ['dev12.22.18',]
+
 
 class Client(EnqueUDPClient):
     def __init__(self, host, port, game):
@@ -29,8 +31,8 @@ class Client(EnqueUDPClient):
         bullets._bullets = pygame.sprite.Group(*[Obstacle([10, 10], i) for i in msg['bullets']])
 
     def network_settings(self, msg, addr):
-        # Update settings. No settings to update as of right now.
-        pass
+        if not msg['ver'] in VALID_SERV_VER:
+            test_modeLogger.critical("Invalid server version: %s", msg['ver'])
 
     def network_players(self, msg, addr):
         self.game.players = pygame.sprite.Group(*[Obstacle([16, 16], i, color=(0, 0, 255)) for i in msg['players']])
@@ -152,7 +154,7 @@ def tick_mult_test(self):
     self.map.blit_to(self.screen)
     self.hud_layer.blit_to(self.screen)
     # test_modeLogger.debug(str(self.clock.get_fps()))
-    pygame.display.update(self.hud_layer.flush_rects() + self.map.flush_rects())
+    pygame.display.update(self.current_rect)
 
     send = []
     for event in pygame.event.get():

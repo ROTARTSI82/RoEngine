@@ -83,6 +83,10 @@ def are_relatively_prime(a, b):
     return True
 
 
+def wrap(minimum, maximum, val):
+    return (val - minimum) % (maximum - minimum + 1) + minimum
+
+
 def reduce_frac(num, dom):
     if num == 0:
         return 0, 1

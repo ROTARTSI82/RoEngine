@@ -50,6 +50,7 @@ class D12_11_18(Game):
         self.initiated = []
 
         self.screen = pygame.display.set_mode(SCREEN_RES, SCREEN_FLAGS)
+        self.update_rects(SCREEN_RES)
 
         self.hud_layer = Map(HUD_RES)
         self.clear_surf = pygame.Surface(HUD_RES, SRCALPHA, 32)
@@ -82,6 +83,34 @@ class D12_11_18(Game):
         buttons.set_buttons(self.main_menu_bts.sprites())
         self.running = True
 
+    def update_rects(self, size):
+        middle = size[0] / 2, size[1] / 2
+        self.quad_rects = [pygame.rect.Rect((0, 0), middle), pygame.rect.Rect((middle[0], 0), middle),
+                           pygame.rect.Rect(middle, middle), pygame.rect.Rect((0, middle[1]), middle)]
+        self.half_y_rects = [pygame.rect.Rect((0, 0), (size[0], middle[1])),
+                             pygame.rect.Rect((0, middle[1]), (size[0], middle[1]))]
+        self.half_x_rects = [pygame.rect.Rect((0, 0), (middle[0], size[1])),
+                             pygame.rect.Rect((middle[0], 0), (middle[0], size[1]))]
+        self.whole_rect = [pygame.rect.Rect((0, 0), size)]
+        if RECT_MODE in ['quad_rects', 'half_y_rects', 'half_x_rects', 'whole_rect']:
+            self.rects = getattr(self, RECT_MODE)
+        else:
+            logger.critical("Invalid option RECT_MODE: %s", RECT_MODE)
+            self.rects = self.whole_rect
+        self.rect_len = len(self.rects) - 1
+        self.current_rect = self.rects[0]
+        self.rect_index = 0
+
+    def tick_rect(self):
+        if self.rect_index == self.rect_len:
+            self.rect_index = 0
+        else:
+            self.rect_index += 1
+        self.current_rect = self.rects[self.rect_index]
+
+    def global_tick(self):
+        self.tick_rect()
+
     def universal_events(self, event):
         [bt.update_event(event, self.mouse_sprite) for bt in buttons.visible_bts]
         if event.type == MOUSEMOTION:
@@ -92,6 +121,7 @@ class D12_11_18(Game):
         if event.type == VIDEORESIZE:
             logger.info("VIDEORESIZE: %s", event.dict['size'])
             self.screen = pygame.display.set_mode(event.dict['size'], SCREEN_FLAGS)
+            self.update_rects(event.dict['size'])
 
     def tick_arbitrary(self, state):
         logger.fatal("Arbitrary _state: '%s'", state)
@@ -103,6 +133,7 @@ class D12_11_18(Game):
 
     def tick_main_menu(self):
         self.clock.tick()
+        pygame.display.set_caption(str(self.clock.get_fps()))
         self.hud_layer._map = self.clear_surf.copy()
         self.mouse_sprite.rect.center = self.hud_layer.translate_pos(self.mouse_pos)
         self.hud_layer.draw_group(buttons.visible_bts)
@@ -110,7 +141,7 @@ class D12_11_18(Game):
 
         self.screen.fill([255, 255, 255])
         self.hud_layer.blit_to(self.screen)
-        pygame.display.update(self.hud_layer.flush_rects())
+        pygame.display.update(self.current_rect)
 
         for event in pygame.event.get():
             self.universal_events(event)
