@@ -15,8 +15,8 @@ from roengine.misc.cursors import *
 from roengine.misc.maths import *
 from roengine.misc.crypto import *
 
-__all__ = ["Map", "Obstacle", "PlatformerPlayer", "Projectile", "GenericUDPClient", "GenericTCPClient", "Game",
-           "GenericClientFactory", "reactor", "GenericUDPServer", "GenericTCPServer", "GenericServerFactory",
+__all__ = ["Map", "Obstacle", "PlatformerPlayer", "Projectile", "GenericTCPClient", "Game", "set_keybinds",
+           "GenericClientFactory", "reactor", "GenericTCPServer", "GenericServerFactory",
            "Dummy", "Button", "Text", "buttons", "CheckBox", "CheckButton", "Weapon", "bullets", "Bullet",
            "Shotgun", "reticule", "thick_arrow", "clickable", "default", "reticule", "Action", "ActionManager",
            "PopUp", "popups", "ProgressBar", "TextBt"]

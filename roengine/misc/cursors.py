@@ -6,8 +6,8 @@ Module for custom cursors
 
 import pygame
 
-__all__ = ['text_marker', 'slider_x', 'slider_xy', 'slider_y', 'tri_left', 'thick_arrow', 'tri_right',
-           'clickable', 'reticule', 'ball', 'diamond', 'arrow', 'default']
+#__all__ = ['text_marker', 'slider_x', 'slider_xy', 'slider_y', 'tri_left', 'thick_arrow', 'tri_right',
+#           'clickable', 'reticule', 'ball', 'diamond', 'arrow', 'default']
 
 _CLICKABLE_CURSOR = (
     "     XX                 ",  # 24x24

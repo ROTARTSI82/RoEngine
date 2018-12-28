@@ -10,7 +10,7 @@ from roengine.util import Dummy
 BITS = 16
 SAMPLE_RATE = 44100
 CHANNELS = 2
-ZERO_RANGE = 500
+ZERO_RANGE = 10
 AVERAGE = 0.127056277263  # Average after 10 trails with 250ms notes and rests
 MAX_SAMPLE = 2 ** (BITS - 1) - 1
 
@@ -259,7 +259,7 @@ def save_sound(snd, filename):
     fileproc.close()
 
 
-class MusicPlayer(object):
+class FrequencyPlayer(object):
     def __init__(self, array):
         self.array = array
         self.sound = Dummy()
@@ -270,10 +270,10 @@ class MusicPlayer(object):
         for note in self.array:
             if CHANNELS == 1:
                 print ("Playing %s" % note[0][0])
-                _sound = get_mono(NOTES[note[0][0]], note[1])[0]
+                _sound = get_mono(note[0][0], note[1])[0]
             else:
                 print ("Playing (Left=%s Right=%s)" % (note[0][0], note[0][1]))
-                _sound = get_stereo(NOTES[note[0][0]], NOTES[note[0][1]], note[1])[0]
+                _sound = get_stereo(note[0][0], note[0][1], note[1])[0]
             _sound.play(-1)
             pygame.time.wait(int(note[1]*1000))
             _sound.stop()
@@ -283,32 +283,37 @@ class MusicPlayer(object):
         self.sound.play()
 
     def build(self):
-        logger.info("Building... (ETA: %s)", len(self.array)*AVERAGE)
+        msg = "Compiled note %s of " + str(len(self.array))
+        logger.info("Building... (This may take a while...)")
         ret = numpy.array([], dtype=numpy.int16)
-        for note in self.array:
-            sound = get_mono(NOTES[note[0][0]], note[1])[1] if CHANNELS == 1 else \
-                    get_stereo(NOTES[note[0][0]], NOTES[note[0][1]], note[1])[1]
+        for num, note in enumerate(self.array, 1):
+            sound = get_mono(note[0][0], note[1])[1] if CHANNELS == 1 else \
+                    get_stereo(note[0][0], note[0][1], note[1])[1]
             ret = sound.copy() if len(ret) == 0 else numpy.append(ret, sound, axis=0)
             wait = numpy.array([0, ] * int(round(SAMPLE_RATE * note[2])), dtype=numpy.int16) if CHANNELS == 1 else \
                    numpy.array([[0, 0], ] * int(round(SAMPLE_RATE * note[2])), dtype=numpy.int16)
             if len(wait) > 0:
                 ret = wait.copy() if len(ret) == 0 else numpy.append(ret, wait, axis=0)
+            logger.info(msg, num)
         self.compiled = ret
         self.sound = pygame.sndarray.make_sound(ret)
         logging.info("Compile finished!")
 
-import sys
-root = logging.getLogger()
-root.setLevel(logging.DEBUG)
-hdlr = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter('[%(asctime)s|%(name)s] [%(filename)s:%(lineno)d/%(levelname)s]: %(message)s',
-                              '%H:%M:%S')  # Should we write the channel?
-hdlr.setFormatter(formatter)
-root.addHandler(hdlr)
 
-pre_init()
-pygame.init()
-test = MusicPlayer([[[i, i], 0.25, 0.25] for i in NOTES.keys()])
-test.play()
-while pygame.mixer.get_busy():
-    pass
+if __name__ == '__main__':
+    import sys
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    hdlr = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('[%(asctime)s|%(name)s] [%(filename)s:%(lineno)d/%(levelname)s]: %(message)s',
+                                  '%H:%M:%S')  # Should we write the channel?
+    hdlr.setFormatter(formatter)
+    root.addHandler(hdlr)
+
+    pre_init()
+    pygame.init()
+    snotes = sorted(NOTES.values())
+    test = FrequencyPlayer([[[i, i], 0.01, 0] for i in range(int(snotes[0]), int(snotes[-1]), 10)])
+    test.play()
+    while pygame.mixer.get_busy():
+        pass

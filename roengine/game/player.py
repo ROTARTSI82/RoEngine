@@ -2,12 +2,30 @@ import pygame
 import math
 from roengine.util import Dummy
 
-__all__ = ["PlatformerPlayer", 'PLAYER_KEYBINDS']
+__all__ = ["PlatformerPlayer", 'set_keybinds']
 
 PLAYER_KEYBINDS = {'jump': (pygame.K_SPACE, pygame.K_w), 'forward': (pygame.K_d, ), 'backward': (pygame.K_a, )}
 
 
+def set_keybinds(keybinds):
+    global PLAYER_KEYBINDS
+    PLAYER_KEYBINDS = keybinds
+
+
 class PlatformerPlayer(pygame.sprite.Sprite):
+    keybinds = PLAYER_KEYBINDS
+
+    speed = 5
+    jump_power = 10
+    gravity = 0.5
+
+    climb_skill = 1
+    climb_velocity = 5
+    term_y = 10
+
+    bounds_checks = ('+y', '-x', '+x')
+    collidables = pygame.sprite.Group()
+
     def __init__(self, image, pos=(0, 0)):
         pygame.sprite.Sprite.__init__(self)
 
@@ -15,20 +33,9 @@ class PlatformerPlayer(pygame.sprite.Sprite):
         self.velocity = pygame.math.Vector2(0, 0)
         self.rotation = 0
 
-        self.collidables = pygame.sprite.Group()
-        self.gravity = 0.5
-
-        self.speed = 5
-        self.jump_power = 10
-
         self.is_climbing = False
-        self.climb_velocity = 5
-        self.climb_skill = 1
-
         self.grounded = False
         self.firing = False
-        self.bounds_checks = ('+y', '-x', '+x')
-        self.term_y = 10
         self.bounds = None
 
         self.input_state = {"forward": False, "backward": False, "jump": False}
@@ -65,18 +72,18 @@ class PlatformerPlayer(pygame.sprite.Sprite):
         if event.type == pygame.MOUSEBUTTONUP:
             self.firing = False
         if event.type == pygame.KEYDOWN:
-            if event.key in PLAYER_KEYBINDS['forward']:
+            if event.key in self.keybinds['forward']:
                 self.input_state["forward"] = True
-            if event.key in PLAYER_KEYBINDS['backward']:
+            if event.key in self.keybinds['backward']:
                 self.input_state["backward"] = True
-            if event.key in PLAYER_KEYBINDS["jump"]:
+            if event.key in self.keybinds["jump"]:
                 self.input_state["jump"] = True
         if event.type == pygame.KEYUP:
-            if event.key in PLAYER_KEYBINDS['forward']:
+            if event.key in self.keybinds['forward']:
                 self.input_state["forward"] = False
-            if event.key in PLAYER_KEYBINDS['backward']:
+            if event.key in self.keybinds['backward']:
                 self.input_state["backward"] = False
-            if event.key in PLAYER_KEYBINDS["jump"]:
+            if event.key in self.keybinds["jump"]:
                 self.input_state["jump"] = False
 
     def clamp_velocity(self):

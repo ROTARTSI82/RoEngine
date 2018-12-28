@@ -79,7 +79,7 @@ class ServerTest(Game):
                              pygame.rect.Rect((0, middle[1]), (size[0], middle[1]))]
         self.half_x_rects = [pygame.rect.Rect((0, 0), (middle[0], size[1])),
                              pygame.rect.Rect((middle[0], 0), (middle[0], size[1]))]
-        self.whole_rect = [pygame.rect.Rect(size, size)]
+        self.whole_rect = [pygame.rect.Rect((0, 0), size)]
         self.rects = getattr(self, RECT_MODE)
         self.rect_len = len(self.rects) - 1
         self.current_rect = self.rects[0]

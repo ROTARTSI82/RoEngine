@@ -9,9 +9,9 @@ The goal of this library is to make [twisted] as easy to use as [PodSixNet]
 Written by Grant Yang (2018)
 """
 
-from .udp import *
+# from .udp import *  # Is depreciated.
 from .tcp import *
 from .cUDP import *
 
-__all__ = ['GenericUDPClient', 'GenericTCPClient', 'GenericClientFactory', 'reactor',
-           'GenericUDPServer', 'GenericTCPServer', 'GenericServerFactory']
+__all__ = ['GenericTCPClient', 'GenericClientFactory', 'reactor', 'GenericTCPServer', 'GenericServerFactory',
+           'ServerUDP', 'EnqueUDPClient', 'UDPServerFactory']

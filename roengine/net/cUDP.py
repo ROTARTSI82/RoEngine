@@ -8,6 +8,9 @@ import logging
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
 
+
+__all__ = ['ServerUDP', 'EnqueUDPClient', 'UDPServerFactory']
+
 load = rencode.loads
 dump = rencode.dumps
 
@@ -44,6 +47,7 @@ class UDPServerFactory(DatagramProtocol):
     def __init__(self, host, port, maxClients=1):
         self.max_clients = maxClients
         self.clients = []
+        self.handled_ids = []
         self.client_protocols = {}
         self.arrivals_confirmed = {}
         self.host, self.port = host, port
@@ -141,6 +145,10 @@ class UDPServerFactory(DatagramProtocol):
         message['action'] = 'confirm_arrival'
         self.send_to_addr(message, address)
         cUDPServerLogger.info("%s verify_send%s", self.address, (message, address))
+        if message['id'] in self.handled_ids:
+            cUDPServerLogger.critical("Got repeat verify_send! Ignoring...")
+            return
+        self.handled_ids.append(message['id'])
         try:
             if hasattr(self.client_protocols[address], "network_" + message['data']["action"]):
                 getattr(self.client_protocols[address], "network_" + message['data']["action"])(message['data'])
@@ -175,6 +183,9 @@ class UDPServerFactory(DatagramProtocol):
         reactor.callLater(retry, self.confirm_arrivals, message, address, retry)
 
     def network_confirm_arrival(self, message, address):
+        if self.arrivals_confirmed[message['id']]:
+            cUDPServerLogger.critical("Got repeat confirm_arrival! Ignoring...")
+            return
         self.arrivals_confirmed[message['id']] = True
         try:
             if hasattr(self, "verified_" + message["data"]["action"]):
@@ -200,6 +211,7 @@ class EnqueUDPClient(DatagramProtocol):
         self.address = host, port
         self.connection_success = False
         self.send_que = []
+        self.handled_ids = []
         self.arrivals_confirmed = {}
 
     def load(self):
@@ -267,6 +279,9 @@ class EnqueUDPClient(DatagramProtocol):
         reactor.stop()
 
     def network_confirm_arrival(self, message, address):
+        if self.arrivals_confirmed[message['id']]:
+            cUDPClientLogger.critical("Got repeat confirm_arrival! Ignoring...")
+            return
         self.arrivals_confirmed[message['id']] = True
         try:
             if hasattr(self, "verified_" + message["data"]["action"]):
@@ -279,6 +294,10 @@ class EnqueUDPClient(DatagramProtocol):
     def network_verify_send(self, message, address):
         message['action'] = 'confirm_arrival'
         self.enque(message)
+        if message['id'] in self.handled_ids:
+            cUDPClientLogger.critical("Got repeat verify_send! Ignoring...")
+            return
+        self.handled_ids.append(message['id'])
         try:
             if hasattr(self, "network_" + message['data']["action"]):
                 getattr(self, "network_" + message['data']["action"])(message['data'], address)

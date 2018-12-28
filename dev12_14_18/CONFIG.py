@@ -3,7 +3,8 @@
 from pygame.locals import *
 
 __all__ = ['SCREEN_RES', 'SCREEN_FLAGS', 'HUD_RES', 'RECORD_LOGS', 'LOG_CONSOLE', 'WRITE_LATEST', 'LATEST_LEVEL',
-           'OUTPUT_LEVEL', 'CONSOLE_LEVEL', 'MAP_ZOOM', 'ABILITY_KEYBINDS', 'WEAPON_KEYBINDS', 'RECT_MODE']
+           'OUTPUT_LEVEL', 'CONSOLE_LEVEL', 'MAP_ZOOM', 'ABILITY_KEYBINDS', 'WEAPON_KEYBINDS', 'RECT_MODE',
+           'BASIC_KEYBINDS']
 
 # CRITICAL/FATAL = 50
 # ERROR = 40
@@ -28,3 +29,4 @@ RECT_MODE = 'whole_rect'
 
 ABILITY_KEYBINDS = {K_v: 'ability_1', K_c: 'ability_2'}
 WEAPON_KEYBINDS = {K_1: 'weapon_1', K_2: 'weapon_2', K_3: 'weapon_3', K_4: 'weapon_4'}
+BASIC_KEYBINDS = {'jump': (K_SPACE, K_w), 'forward': (K_d, ), 'backward': (K_a, )}

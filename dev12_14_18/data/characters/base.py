@@ -2,6 +2,7 @@ import pygame
 
 from pygame.locals import *
 from roengine import *
+from dev12_14_18.CONFIG import BASIC_KEYBINDS
 from dev12_14_18.data.weapons.weapons import *
 
 
@@ -34,6 +35,8 @@ class Flight(Action):
 
 
 class BasicCharacter(PlatformerPlayer):
+    keybinds = BASIC_KEYBINDS
+
     def __init__(self, game):
         PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
         self.image.fill([0, 0, 255])
