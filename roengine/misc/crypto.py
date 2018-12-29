@@ -10,7 +10,7 @@ import subprocess
 
 from roengine.misc.maths import gcf
 
-#__all__ = ('RSAGenerator', 'hmac', 'User', 'AccountManager', 'is_prime_openssl')
+# __all__ = ('RSAGenerator', 'hmac', 'User', 'AccountManager', 'is_prime_openssl')
 
 
 SHOW_PASSDUMP = True
@@ -294,8 +294,9 @@ def multiplicative_inverse(e, phi):
         return d + phi
 
 
-def psw_decrypt(ciphertext, psw, seed=0, psw_chunk_size=32):
+def psw_decrypt(ciphertext, psw, seed=0, psw_chunk_size=8):
     random.seed(ord(psw[0]) if seed == 0 else seed)
+    ciphertext = xor_dec(ciphertext, psw, False)
     psw_hex = [int(i, 0) for i in split(binascii.hexlify(psw), psw_chunk_size - 1, '0x1')]
     psw_sum = sum([ord(i) for i in psw])
     split_str = [hex((i-psw_sum)/random.choice(psw_hex)).strip("L")[3:] for i in ciphertext]
@@ -306,9 +307,39 @@ def psw_decrypt(ciphertext, psw, seed=0, psw_chunk_size=32):
         return ""
 
 
-def psw_encrypt(plaintext, psw, seed=0, chunk_size=32, psw_chunk_size=32):
+def psw_encrypt(plaintext, psw, seed=0, chunk_size=8, psw_chunk_size=8):
     random.seed(ord(psw[0]) if seed == 0 else seed)
     psw_sum = sum([ord(i) for i in psw])
     psw_hex = [int(i, 0) for i in split(binascii.hexlify(psw), psw_chunk_size - 1, '0x1')]
-    return [int(i, 0)*random.choice(psw_hex)+psw_sum
-            for i in split(binascii.hexlify(plaintext), chunk_size - 1, '0x1')]
+    ret = [int(i, 0)*random.choice(psw_hex)+psw_sum
+           for i in split(binascii.hexlify(plaintext), chunk_size - 1, '0x1')]
+    return xor_enc(ret, psw, False)
+
+
+def xor_enc(plain, psw, stringmode=True):
+    if len(psw) < len(plain):
+        psw = pad(psw, len(plain), psw)
+    if len(psw) > len(plain):
+        psw = psw[:len(plain)]
+    psw = [ord(i) for i in psw]
+    if stringmode:
+        plain = [ord(i) for i in plain]
+    new = []
+    for pa, pl in zip(psw, plain):
+        new.append(pl ^ pa)
+    return new
+
+
+def xor_dec(cipher, psw, stringmode=True):
+    if len(psw) < len(cipher):
+        psw = pad(psw, len(cipher), psw)
+    if len(psw) > len(cipher):
+        psw = psw[:len(cipher)]
+    psw = [ord(i) for i in psw]
+    new = []
+    for pa, ci in zip(psw, cipher):
+        new.append(ci ^ pa)
+    if stringmode:
+        return "".join([chr(i) for i in new])
+    else:
+        return new

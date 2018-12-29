@@ -4,6 +4,7 @@ import numpy
 import random
 import wave
 import logging
+import warnings
 
 from roengine.util import Dummy
 
@@ -260,19 +261,21 @@ def save_sound(snd, filename):
 
 
 class FrequencyPlayer(object):
-    def __init__(self, array):
+    def __init__(self, array, build=True):
         self.array = array
         self.sound = Dummy()
         self.compiled = []
-        self.build()
+        if build:
+            self.build()
 
     def sync_play(self):
+        warnings.warn("sync_play is depreciated. Use build() and play()", DeprecationWarning)
         for note in self.array:
             if CHANNELS == 1:
-                print ("Playing %s" % note[0][0])
+                logger.debug("Playing %s", note[0][0])
                 _sound = get_mono(note[0][0], note[1])[0]
             else:
-                print ("Playing (Left=%s Right=%s)" % (note[0][0], note[0][1]))
+                logger.debug("Playing (Left=%s Right=%s)", note[0][0], note[0][1])
                 _sound = get_stereo(note[0][0], note[0][1], note[1])[0]
             _sound.play(-1)
             pygame.time.wait(int(note[1]*1000))
@@ -294,7 +297,7 @@ class FrequencyPlayer(object):
                    numpy.array([[0, 0], ] * int(round(SAMPLE_RATE * note[2])), dtype=numpy.int16)
             if len(wait) > 0:
                 ret = wait.copy() if len(ret) == 0 else numpy.append(ret, wait, axis=0)
-            logger.info(msg, num)
+            logger.debug(msg, num)
         self.compiled = ret
         self.sound = pygame.sndarray.make_sound(ret)
         logging.info("Compile finished!")
@@ -312,8 +315,7 @@ if __name__ == '__main__':
 
     pre_init()
     pygame.init()
-    snotes = sorted(NOTES.values())
-    test = FrequencyPlayer([[[i, i], 0.01, 0] for i in range(int(snotes[0]), int(snotes[-1]), 10)])
-    test.play()
+    test = FrequencyPlayer([[[i, i], 0.01, 0] for i in range(20, 20000, 100)])
+    test.play()  # Ok this is a bad idea. EDIT: sync_play is event worse.
     while pygame.mixer.get_busy():
         pass
