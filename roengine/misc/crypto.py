@@ -301,7 +301,7 @@ def psw_decrypt(ciphertext, psw, seed=0, psw_chunk_size=8):
     psw_sum = sum([ord(i) for i in psw])
     split_str = [hex((i-psw_sum)/random.choice(psw_hex)).strip("L")[3:] for i in ciphertext]
     try:
-        return binascii.unhexlify("".join(split_str))
+        return vigenere_dec(binascii.unhexlify("".join(split_str)), psw)
     except:
         cryptLog.exception('psw_decrypt failed. Is chunk size from psw_encrypt too large? Invalid passcode?')
         return ""
@@ -309,6 +309,7 @@ def psw_decrypt(ciphertext, psw, seed=0, psw_chunk_size=8):
 
 def psw_encrypt(plaintext, psw, seed=0, chunk_size=8, psw_chunk_size=8):
     random.seed(ord(psw[0]) if seed == 0 else seed)
+    plaintext = vigenere_enc(plaintext, psw)
     psw_sum = sum([ord(i) for i in psw])
     psw_hex = [int(i, 0) for i in split(binascii.hexlify(psw), psw_chunk_size - 1, '0x1')]
     ret = [int(i, 0)*random.choice(psw_hex)+psw_sum
@@ -343,3 +344,21 @@ def xor_dec(cipher, psw, stringmode=True):
         return "".join([chr(i) for i in new])
     else:
         return new
+
+
+def vigenere_enc(plain, psw):
+    if len(psw) < len(plain):
+        psw = pad(psw, len(plain), psw)
+    new = ""
+    for ps, pl in zip(psw, plain):
+        new += chr(wrap(0, 255, ord(ps)+ord(pl)))
+    return new
+
+
+def vigenere_dec(plain, psw):
+    if len(psw) < len(plain):
+        psw = pad(psw, len(plain), psw)
+    new = ""
+    for ps, pl in zip(psw, plain):
+        new += chr(wrap(0, 255, ord(pl)-ord(ps)))
+    return new
