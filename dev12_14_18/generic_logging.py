@@ -14,7 +14,7 @@ HEADER = ("="*40) + "[%s]" + ("="*40) + '\n'
 def new_handlers():
     current_header = HEADER % time.ctime()
     hdlrs = []
-    formatter = logging.Formatter('[%(asctime)s|%(name)s] [%(filename)s:%(lineno)d/%(levelname)s]: %(message)s',
+    formatter = logging.Formatter('[%(asctime)s] [%(name)s:%(lineno)d/%(levelname)s]: %(message)s',
                                   '%H:%M:%S')  # Should we write the channel?
     filename = 'logs/DUMMY.log'
     if not os.path.exists('logs'):

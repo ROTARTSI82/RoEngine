@@ -14,7 +14,7 @@ ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
 
-test_modeLogger = logging.getLogger('mult_test')
+test_modeLogger = logging.getLogger('multiplayer_test')
 
 VALID_SERV_VER = ['dev12.22.18',]
 

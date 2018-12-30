@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 import pygame
+import logging
 from pygame.locals import *
 
 import sys
@@ -177,6 +178,7 @@ class MyProtocol(ServerUDP):
                     self.player.mode = 'weapon'
 
     def tick(self):
+        '''
         if self.frame_num == 0:
             self.update_players()
         if self.frame_num == 1:
@@ -185,6 +187,10 @@ class MyProtocol(ServerUDP):
             self.update_self()
             self.frame_num = -1  # 0 frame wait since frame_num is incremented
         self.frame_num += 1
+        '''
+        self.update_bullets()
+        self.update_players()
+        self.update_self()
         self.empty_que()
 
     def update_players(self):
@@ -200,8 +206,6 @@ class MyProtocol(ServerUDP):
                'hp': self.player.health, 'kills': self.player.kills}
         if self.player.mode == 'weapon':
             msg.update({"ammo": self.player.weapon.ammo})
-        if self.player.mode == 'ability':
-            msg.update({"cool": self.player.ability.get_cooldown()})
         self.enque(msg)
 
 

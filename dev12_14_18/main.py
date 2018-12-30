@@ -129,7 +129,7 @@ class D12_11_18(Game):
         self.update_state('main_menu')
 
     def unhandled_update_state(self, old, new):
-        logger.fatal("Arbitrary update_state: '%s' -> '%s'", old, new)
+        logger.warn("Arbitrary update_state: '%s' -> '%s'", old, new)
 
     def tick_main_menu(self):
         self.clock.tick()

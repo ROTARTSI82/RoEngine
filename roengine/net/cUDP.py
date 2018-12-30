@@ -18,7 +18,14 @@ cUDPServerLogger = logging.getLogger('cUDP.ServFac')
 cUDPClientLogger = logging.getLogger('cUDP.CliFac')
 cUDPServProtLogger = logging.getLogger('cUDP.ServProt')
 
-LOG_NO_HANDLERS = False
+LOG_NO_HANDLERS = True
+LOG_SENDS = False
+LOG_GETS = False
+
+
+def cUDP_settings(lsends=False, lgets=False, lnhdlrs=False):
+    global LOG_GETS, LOG_SENDS, LOG_NO_HANDLERS
+    LOG_SENDS, LOG_GETS, LOG_NO_HANDLERS = lsends, lgets, lnhdlrs
 
 
 class ServerUDP(object):
@@ -37,6 +44,8 @@ class ServerUDP(object):
         try:
             if self.send_que and self.factory is not None:
                 self.factory.transport.write(dump(self.send_que), self.address)
+                if LOG_SENDS:
+                    cUDPServProtLogger.debug("%s SEND %s --> %s", self.address, self.send_que, self.address)
                 self.send_que = []
         except:
             cUDPServProtLogger.exception("%s empty_que() failed.", self.address)
@@ -56,6 +65,8 @@ class UDPServerFactory(DatagramProtocol):
     def _send(self, msg, addr):
         try:
             self.transport.write(dump([msg, ]), addr)
+            if LOG_SENDS:
+                cUDPServerLogger.debug("%s SEND %s --> %s", self.address, msg, addr)
         except:
             cUDPServerLogger.exception("%s _send() failed.", self.address)
 
@@ -81,18 +92,18 @@ class UDPServerFactory(DatagramProtocol):
                     elif LOG_NO_HANDLERS:
                         cUDPServerLogger.critical('%s Got packet without handler: %s', self.address, packet)
                 except Exception as e:
-                    cUDPServerLogger.exception("%s Protocol's network_%s(%s) failed:", self.address,
-                                               "?" if 'action' not in packet else packet['action'], packet)
+                    cUDPServerLogger.exception("%s Protocol's network_ failed on: ", self.address, packet)
                 try:
                     if hasattr(self, "network_" + packet["action"]):
                         getattr(self, "network_" + packet["action"])(packet, address)
                     elif LOG_NO_HANDLERS:
                         cUDPServerLogger.critical('%s Got packet without handler: %s', self.address, packet)
                 except Exception as e:
-                    cUDPServerLogger.exception("%s Self's network_%s(%s) failed:", self.address,
-                                               "?" if 'action' not in packet else packet['action'], packet)
+                    cUDPServerLogger.exception("%s Self's network_ failed on:", self.address, packet)
         except Exception as e:
             cUDPServerLogger.exception("%s Invalid packet from %s: %s", self.address, address, message)
+        if LOG_GETS:
+            cUDPServerLogger.debug("%s GET %s <-- %s", self.address, message, address)
 
     def send_to_all(self, message):
         [self.send_to_addr(message, addr) for addr in self.clients]
@@ -105,11 +116,10 @@ class UDPServerFactory(DatagramProtocol):
             if addr in self.client_protocols:
                 self.client_protocols[addr].enque(message)
             else:
+                cUDPServerLogger.critical('%s send_to_addr%s failed. Trying _send()',
+                                          self.address, (message, addr))
                 self._send(message, addr)
-                if LOG_NO_HANDLERS:
-                    cUDPServerLogger.critical('%s send_to_addr%s failed. Trying _send()',
-                                              self.address, (message, addr))
-            #self.transport.write(dump(message), addr)
+            # self.transport.write(dump(message), addr)
         else:
             cUDPServerLogger.critical('%s send_to_addr%s failed due to null transport. Trying _send()',
                                       self.address, (message, addr))
@@ -155,24 +165,24 @@ class UDPServerFactory(DatagramProtocol):
             elif LOG_NO_HANDLERS:
                 cUDPServerLogger.critical('%s Got packet without handler: %s', self.address, message)
         except Exception as e:
-            cUDPServerLogger.exception("%s Protocol for %s unable to handle Packet<%s> in verify_send", self.address,
-                                       address, message)
+            cUDPServerLogger.exception("%s Protocol's network_%s(%s) failed:", self.address,
+                                       "?" if 'action' not in message else message['data']['action'], message)
         try:
             if hasattr(self, "network_" + message['data']["action"]):
                 getattr(self, "network_" + message['data']["action"])(message['data'], address)
             elif LOG_NO_HANDLERS:
                 cUDPServerLogger.critical('%s Got packet without handler: %s', self.address, message)
         except Exception as e:
-            cUDPServerLogger.exception("%s Unable to handle Packet<%s> from %s in verify_send",
-                                       self.address, message, address)
+            cUDPServerLogger.exception("%s Self's network_%s(%s) failed:", self.address,
+                                       "?" if 'action' not in message else message['data']['action'], message)
 
     def confirm_arrivals(self, message, address, retry):
         if not self.arrivals_confirmed[message['id']]:
-            cUDPServerLogger.critical("%s Packet<%s> was not confirmed. Retrying in %s", self.address, message, retry)
+            cUDPServerLogger.critical("%s Cannot confirm packet: %s Retrying in %s", self.address, message, retry)
             self.send_to_addr(message, address)
             reactor.callLater(retry, self.confirm_arrivals, message, address, retry)
         else:
-            cUDPServerLogger.info("%s Packet<%s> was confirmed.", self.address, message)
+            cUDPServerLogger.info("%s Packet was confirmed: %s", self.address, message)
 
     def verify_send(self, message, address, retry=1):
         keys = sorted(self.arrivals_confirmed.keys())
@@ -184,7 +194,7 @@ class UDPServerFactory(DatagramProtocol):
 
     def network_confirm_arrival(self, message, address):
         if self.arrivals_confirmed[message['id']]:
-            cUDPServerLogger.critical("Got repeat confirm_arrival! Ignoring...")
+            cUDPServerLogger.critical("%s Got repeat confirm_arrival! Ignoring...", self.address)
             return
         self.arrivals_confirmed[message['id']] = True
         try:
@@ -193,7 +203,7 @@ class UDPServerFactory(DatagramProtocol):
             elif LOG_NO_HANDLERS:
                 cUDPServerLogger.critical('%s Got packet without verified_ handler: %s', self.address, message)
         except Exception as e:
-            cUDPServerLogger.exception("%s Unable to confirm arrival of %s", self.address, message)
+            cUDPServerLogger.exception("%s Self's verified_ failed on: ", self.address, message)
 
         try:
             if hasattr(self.client_protocols[address], "verified_" + message["data"]["action"]):
@@ -202,7 +212,7 @@ class UDPServerFactory(DatagramProtocol):
             elif LOG_NO_HANDLERS:
                 cUDPServerLogger.critical('%s Got packet without verified_ handler: %s', self.address, message)
         except Exception as e:
-            cUDPServerLogger.exception("%s Protocol%s unable to confirm arrival of %s", self.address, address, message)
+            cUDPServerLogger.exception("%s Protocol's verified_ failed on: %s", self.address, message)
 
 
 class EnqueUDPClient(DatagramProtocol):
@@ -232,9 +242,11 @@ class EnqueUDPClient(DatagramProtocol):
                     elif LOG_NO_HANDLERS:
                         cUDPClientLogger.critical('%s Got packet without handler: %s', self.address, message)
                 except Exception as e:
-                    cUDPClientLogger.exception("%s Unable to handle Packet<%s>: %s", self.address, address, message)
+                    cUDPClientLogger.exception("%s network_ failed on: %s", self.address, message)
         except Exception as e:
             cUDPClientLogger.exception("%s Invalid packet from %s: %s", self.address, address, message)
+        if LOG_GETS:
+            cUDPClientLogger.debug("%s GET %s <-- %s", self.address, message, address)
 
     def enque(self, message):
         self.send_que.append(message)
@@ -246,6 +258,8 @@ class EnqueUDPClient(DatagramProtocol):
         try:
             if self.send_que:
                 self.transport.write(dump(self.send_que))
+                if LOG_SENDS:
+                    cUDPClientLogger.debug("%s SEND %s --> %s", self.address, self.send_que, self.address)
                 self.send_que = []
         except:
             cUDPClientLogger.exception("%s empty_que() failed.", self.address)
@@ -253,17 +267,19 @@ class EnqueUDPClient(DatagramProtocol):
 
     def _send(self, message):
         if self.transport is not None:
-            self.transport.write(dump([message,]))
+            self.transport.write(dump([message, ]))
+            if LOG_SENDS:
+                cUDPClientLogger.debug("%s SEND %s --> %s", self.address, message, self.address)
         else:
             cUDPClientLogger.critical("%s _send() failed due to null transport", self.address)
 
     def confirm_arrivals(self, message, retry=1):
         if not self.arrivals_confirmed[message['id']]:
-            cUDPClientLogger.critical("%s Packet<%s> was not confirmed. Retrying in %s", self.address, message, retry)
+            cUDPClientLogger.critical("%s Cannot confirm packet: %s Retrying in %s", self.address, message, retry)
             self.enque(message)
             reactor.callLater(retry, self.confirm_arrivals, message, retry)
         else:
-            cUDPClientLogger.info("%s Packet<%s> was confirmed.", self.address, message)
+            cUDPClientLogger.info("%s Packet was confirmed: %s", self.address, message)
 
     def verify_send(self, message, retry=1):
         keys = sorted(self.arrivals_confirmed.keys())
@@ -274,13 +290,13 @@ class EnqueUDPClient(DatagramProtocol):
         reactor.callLater(retry, self.confirm_arrivals, message, retry)
 
     def network_kick(self, message, address):
-        cUDPClientLogger.info("%s Was kicked: '%s'. Stopping...", self.address,
+        cUDPClientLogger.info("%s Was kicked: '%s'.", self.address,
                               message['reason'] if 'reason' in message else '?')
         reactor.stop()
 
     def network_confirm_arrival(self, message, address):
         if self.arrivals_confirmed[message['id']]:
-            cUDPClientLogger.critical("Got repeat confirm_arrival! Ignoring...")
+            cUDPClientLogger.critical("%s Got repeat confirm_arrival! Ignoring...", self.address)
             return
         self.arrivals_confirmed[message['id']] = True
         try:
@@ -289,13 +305,13 @@ class EnqueUDPClient(DatagramProtocol):
             elif LOG_NO_HANDLERS:
                 cUDPClientLogger.critical('%s Got packet without handler: %s', self.address, message)
         except Exception as e:
-            cUDPClientLogger.exception("%s Unable to confirm arrival of %s", self.address, message)
+            cUDPClientLogger.exception("%s verify_ failed on: %s", self.address, message)
 
     def network_verify_send(self, message, address):
         message['action'] = 'confirm_arrival'
         self.enque(message)
         if message['id'] in self.handled_ids:
-            cUDPClientLogger.critical("Got repeat verify_send! Ignoring...")
+            cUDPClientLogger.critical("%s Got repeat verify_send! Ignoring...", self.address)
             return
         self.handled_ids.append(message['id'])
         try:
@@ -304,5 +320,4 @@ class EnqueUDPClient(DatagramProtocol):
             elif LOG_NO_HANDLERS:
                 cUDPClientLogger.critical('%s Got packet without handler: %s', self.address, message)
         except Exception as e:
-            cUDPClientLogger.exception("%s Unable to handle Packet<%s> from %s in verify_send",
-                                       self.address, message, address)
+            cUDPClientLogger.exception("%s network_ failed on: %s", self.address, message)
