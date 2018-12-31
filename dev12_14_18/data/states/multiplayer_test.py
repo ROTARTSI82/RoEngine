@@ -16,7 +16,39 @@ weapon_switch = Action('player', 10, 0)
 
 test_modeLogger = logging.getLogger('multiplayer_test')
 
-VALID_SERV_VER = ['dev12.22.18',]
+VALID_SERV_VER = ['dev12.30.18', ]
+
+
+class RespawnPopup(PopUp):
+    def __init__(self, game):
+        PopUp.__init__(self)
+        self.game = game
+        self.text = Text("Oh nose! You died!", (HUD_RES[0]/2, HUD_RES[1]/2), fg=(255, 255, 255))
+        self.filter = pygame.Surface(self.game.screen.get_size(), pygame.SRCALPHA, 32).convert()
+        self.filter.set_alpha(200)
+
+    def open(self):
+        self.update_filter()
+        self.is_open = True
+
+    def update_filter(self):
+        self.filter = pygame.Surface(self.game.screen.get_size(), pygame.SRCALPHA, 32).convert()
+        self.filter.set_alpha(200)
+
+    def tick_main(self):
+        if self.game.player.alive:
+            print ("CLOSING POPUP")
+            popups.close()
+        self.game.screen.blit(self.filter, [0, 0])
+        self.game.hud_layer._map = self.game.clear_surf.copy()
+        self.game.hud_layer.draw_sprite(self.text)
+        for event in pygame.event.get():
+            self.game.universal_events(event)
+            if event.type == VIDEORESIZE:
+                self.update_filter()
+
+    def close(self, reason):
+        self.is_open = False
 
 
 class Client(EnqueUDPClient):
@@ -38,7 +70,7 @@ class Client(EnqueUDPClient):
         self.game.players = pygame.sprite.Group(*[Obstacle([16, 16], i, color=(0, 0, 255)) for i in msg['players']])
 
     def network_self(self, msg, addr):
-        self.game.player.kills = msg['kills']
+        self.game.player.score = msg['score']
         self.game.player.rect.center = msg['pos']
         self.game.player.health = msg['hp']
         self.game.player.update_pos()
@@ -91,13 +123,15 @@ def enter_mult_test(self, old):
     self.hp_txt = Text("Health: " + str(self.player.health))
     self.hp_txt.rect.center = self.hp_bar.rect.center
 
-    self.kill_txt = Text("Kills: 0", bg=(255, 255, 255))
+    self.kill_txt = Text("Score: 0", bg=(255, 255, 255))
     self.kill_txt.rect.centerx = HUD_RES[0]/2
     self.kill_txt.rect.top = self.weapon_txt.rect.bottom + 5
 
     self.ammo_txt = Text(str(self.player.weapon.ammo) + '/inf', bg=(255, 255, 255))
     self.ammo_txt.rect.left = 100
     self.ammo_txt.rect.centery = 55
+
+    self.respawn = RespawnPopup(self)
 
     self.initiated.append('multiplayer_test')
 
@@ -115,10 +149,14 @@ def tick_mult_test(self):
     self.player.update()
     bullets.update()
 
+    if (not self.player.alive) and (not self.respawn.is_open):
+        print ("Opening popup")
+        popups.open(self.respawn)
+
     self.hp_bar.val = self.player.health
     self.hp_bar.update()
     self.hp_txt.update_text("Health: " + str(self.player.health))
-    self.kill_txt.update_text("Kills: "+str(self.player.kills))
+    self.kill_txt.update_text("Score: "+str(self.player.score))
     if self.player.mode == 'weapon':
         self.reload_progress = "%.1f"%(self.player.action_manager.action_duration - self.player.action_manager.progress)
         self.reload_txt.update_text(self.reload_progress)
@@ -128,6 +166,8 @@ def tick_mult_test(self):
         self.reload_txt.update_text("%.1f" % self.player.ability.get_cooldown())
         action_dur = "%.1f" % (self.player.action_manager.action_duration - self.player.action_manager.progress)
         self.ammo_txt.update_text(action_dur)
+
+    self.screen.fill([255, 255, 255])
 
     self.hud_layer._map = self.clear_surf.copy()
     self.hud_layer.draw_group(buttons.visible_bts)
@@ -139,7 +179,6 @@ def tick_mult_test(self):
     self.hud_layer.draw_sprite(self.weapon_txt)
     if self.reload_txt.text != '0.0':
         self.hud_layer.draw_sprite(self.reload_txt)
-    self.hud_layer.scale_to(self.screen, [1, 1])
 
     self.map.fill([255, 255, 255])
     self.map.draw_group(self.TEST_MAP)
@@ -149,11 +188,15 @@ def tick_mult_test(self):
     self.map.get_scroll(self.player.rect.center, self.screen, (self.screen.get_width()/2,
                                                                self.screen.get_height()/2), (True, True))
     self.map.scale_to(self.screen, MAP_ZOOM)
-
-    self.screen.fill([255, 255, 255])
     self.map.blit_to(self.screen)
-    self.hud_layer.blit_to(self.screen)
     # test_modeLogger.debug(str(self.clock.get_fps()))
+
+    if popups.tick():
+        self.player.firing = False
+        self.player.input_state = {"forward": False, "backward": False, "jump": False}
+    self.hud_layer.scale_to(self.screen, [1, 1])
+    self.hud_layer.blit_to(self.screen)
+
     pygame.display.update(self.current_rect)
 
     send = []

@@ -26,7 +26,7 @@ ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
 
-__version__ = 'dev12.22.13'
+__version__ = 'dev12.30.18'
 
 test_modeLogger = logging.getLogger('server_test')
 
@@ -195,7 +195,7 @@ class MyProtocol(ServerUDP):
 
     def update_players(self):
         self.enque({"action": "players", "players":
-            [i.rect.center for i in game.players.sprites() if i != self.player]})
+            [i.rect.center for i in game.players.sprites() if i != self.player and i.alive]})
 
     def update_bullets(self):
         self.enque({"action": "bullets", 'bullets': [i.rect.center for i in bullets.get_group().sprites()]})
@@ -203,7 +203,7 @@ class MyProtocol(ServerUDP):
     def update_self(self):
         identifier = str(self.player.weapon.id if self.player.mode == 'weapon' else self.player.ability.id)
         msg = {"action": "self", "pos": self.player.rect.center, "item": self.player.mode[0]+identifier,
-               'hp': self.player.health, 'kills': self.player.kills}
+               'hp': self.player.health, 'score': self.player.score}
         if self.player.mode == 'weapon':
             msg.update({"ammo": self.player.weapon.ammo})
         self.enque(msg)

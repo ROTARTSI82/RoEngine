@@ -273,7 +273,7 @@ class G111218(Game):
             self.enemies.add(ne)
             logger.info("Spawning new enemy... (is_shooter: %s)", ne.shooter)
             self.SHOOTABLES.add(ne)
-        if popups.empty_que():
+        if popups.tick():
             self.firing = False
             self.player.input_state = {"forward": False, "backward": False, "jump": False}
             return
