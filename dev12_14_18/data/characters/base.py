@@ -76,7 +76,6 @@ class BasicCharacter(PlatformerPlayer):
         if self.health <= 0 and self.alive:
             bullet.parent.kills += 1
             bullet.parent.streak += 1
-            #self.health = 100
             self.rect.center = [0, 0]
             self.update_pos()
             self.streak = 0
@@ -87,7 +86,6 @@ class BasicCharacter(PlatformerPlayer):
         self.action_manager.tick()
         self.weapon.tick()
         if self.health <= 0 and self.alive:
-            #self.health = 100
             self.rect.center = [0, 0]
             self.update_pos()
             self.streak = 0

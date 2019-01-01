@@ -118,6 +118,10 @@ class _ReloadAction(Action):
     def interrupted(self):
         self.parent.reloading = False
 
+    def tick(self):
+        if self.parent.ammo == self.parent.maxMag:
+            self.parent.actionManager.stop()
+
     def finish(self):
         self.parent.reloading = False
         if self.parent.reserve < self.parent.maxMag:
@@ -177,7 +181,7 @@ class Weapon(object):
             self.actionManager.do_action(self.reload_action, True)
             #print ("Activated action")
         self.actionManager.tick()
-        #self.clock.empty_que()
+        #self.clock.tick()
 
     def indp_fire(self, target_pos):
         if self.reserve > 0 and (self.reloading or self.ammo <= 0):

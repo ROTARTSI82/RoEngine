@@ -143,6 +143,8 @@ def tick_test_mode(self):
                 self.player.mode = 'ability'
                 # self.logger.debug('ABILITY switching to %s', str(self.player.ability))
                 self.weapon_txt.update_text("Ability: " + str(self.player.ability))
+            if event.key == K_0:  # Instant reload
+                self.player.weapon.ammo = self.player.weapon.maxMag
             if event.key in VAL:
                 self.player.action_manager.do_action(weapon_switch, True)
                 self.player.weapon = self.player.inv[WEAPON_KEYBINDS[event.key]]

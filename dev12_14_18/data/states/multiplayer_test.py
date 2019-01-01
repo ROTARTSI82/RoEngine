@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+from math import ceil
 
 from dev12_14_18.data.characters.base import *
 from pygame.locals import *
@@ -17,6 +18,7 @@ weapon_switch = Action('player', 10, 0)
 test_modeLogger = logging.getLogger('multiplayer_test')
 
 VALID_SERV_VER = ['dev12.30.18', ]
+CLIENT_PREDICTION = False
 
 
 class RespawnPopup(PopUp):
@@ -37,7 +39,7 @@ class RespawnPopup(PopUp):
 
     def tick_main(self):
         if self.game.player.alive:
-            print ("CLOSING POPUP")
+            # print ("CLOSING POPUP")
             popups.close()
         self.game.screen.blit(self.filter, [0, 0])
         self.game.hud_layer._map = self.game.clear_surf.copy()
@@ -150,13 +152,13 @@ def tick_mult_test(self):
     bullets.update()
 
     if (not self.player.alive) and (not self.respawn.is_open):
-        print ("Opening popup")
+        # print ("Opening popup")
         popups.open(self.respawn)
 
     self.hp_bar.val = self.player.health
     self.hp_bar.update()
-    self.hp_txt.update_text("Health: " + str(self.player.health))
-    self.kill_txt.update_text("Score: "+str(self.player.score))
+    self.hp_txt.update_text("Health: %i" % ceil(self.player.health))
+    self.kill_txt.update_text("Score: %i" % round(self.player.score))
     if self.player.mode == 'weapon':
         self.reload_progress = "%.1f"%(self.player.action_manager.action_duration - self.player.action_manager.progress)
         self.reload_txt.update_text(self.reload_progress)
@@ -189,7 +191,6 @@ def tick_mult_test(self):
                                                                self.screen.get_height()/2), (True, True))
     self.map.scale_to(self.screen, MAP_ZOOM)
     self.map.blit_to(self.screen)
-    # test_modeLogger.debug(str(self.clock.get_fps()))
 
     if popups.tick():
         self.player.firing = False
@@ -204,12 +205,10 @@ def tick_mult_test(self):
         event_logger(self, event)
         self.player.update_event(event)
         self.universal_events(event)
-        sdict = event.dict.copy()
-        if 'pos' in sdict:
-            sdict['pos'] = self.map.translate_pos(sdict['pos'])
         if event.type == MOUSEMOTION:
-            send.append([event.type, {"pos": sdict['pos']}])
-            self.player.aiming_at = sdict['pos']
+            pos = self.map.translate_pos(event.dict['pos'])
+            send.append([event.type, {"pos": pos}])
+            self.player.aiming_at = pos
         if event.type == MOUSEBUTTONDOWN:
             send.append([event.type, {"button": event.button}])
             self.player.firing = True

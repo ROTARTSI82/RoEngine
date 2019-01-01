@@ -18,7 +18,7 @@ cUDPServerLogger = logging.getLogger('cUDP.ServFac')
 cUDPClientLogger = logging.getLogger('cUDP.CliFac')
 cUDPServProtLogger = logging.getLogger('cUDP.ServProt')
 
-LOG_NO_HANDLERS = True
+LOG_NO_HANDLERS = False
 LOG_SENDS = False
 LOG_GETS = False
 
@@ -156,7 +156,7 @@ class UDPServerFactory(DatagramProtocol):
         self.send_to_addr(message, address)
         cUDPServerLogger.info("%s verify_send%s", self.address, (message, address))
         if message['id'] in self.handled_ids:
-            cUDPServerLogger.critical("Got repeat verify_send! Ignoring...")
+            cUDPServerLogger.critical("%s Got repeat verify_send! Ignoring...", self.address)
             return
         self.handled_ids.append(message['id'])
         try:

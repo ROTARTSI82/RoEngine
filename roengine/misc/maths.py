@@ -51,7 +51,7 @@ def lcm(*args):
         return args[0] * args[1] // gcf(*args)
     else:
         lcmi = args[0]
-        for i in args:
+        for i in args[1:]:
             lcmi = lcm(lcmi, i)
         return lcmi
 
@@ -73,7 +73,53 @@ def is_prime(n):
     if n < 3 or n % 2 == 0:
         return n == 2
     else:
-        return not any(n % i == 0 for i in range(3, int(n ** 0.5 + 2), 2))
+        for i in range(3, int(n ** 0.5 + 2), 2):
+            if n % i == 0:
+                return False
+        return True
+
+
+def find_golden(a, b):
+    g = float(max(a, b))
+    l = float(min(a, b))
+    return g / l, (g + l) / g
+
+
+def gen_fib():
+    yield 1
+    yield 1
+    a, b = 1, 1
+    while True:
+        y = a + b
+        a = b
+        b = y
+        yield y
+
+
+def get_cyclops(n, base=10):
+    return base ** (2 * n + 1) - base ** n - 1
+
+
+def to_base(n, base=2, exp='str(%s)'):  # Use exp=chr(%s) for base256
+    numdigits = 0
+    while n - base ** numdigits > 0:
+        numdigits += 1
+    digits = ""
+    done = 0
+    while numdigits >= 0:
+        digit = (n - done) / base ** numdigits
+        done += digit * base ** numdigits
+        digits += eval(exp % 'digit')
+        numdigits -= 1
+    schr = eval(exp % '0')
+    return digits.lstrip(schr) if digits != schr else digits
+
+
+def from_base(n, base=2, exp='int(%s)'):  # Use exp=ord(%s) for base256
+    ret = 0
+    for i, v in enumerate(reversed(n)):
+        ret += base ** i * eval(exp % 'v')
+    return ret
 
 
 def are_relatively_prime(a, b):

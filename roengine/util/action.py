@@ -43,12 +43,21 @@ class ActionManager(object):
         if self.current_action is not None:
             now = time.time()
             self.current_action.tick()
+            if self.current_action is None:
+                return
             self.progress = now-self.action_start
             if self.progress > self.action_duration:
                 self.current_action.finish()
                 self.current_action.last_use = now
                 self.current_action.cooldown_progress = self.current_action.cooldown
                 self.__init__(self.reject_dups)
+
+    def stop(self):
+        if self.current_action is not None:
+            self.current_action.interrupted()
+            self.current_action.last_use = time.time()
+            self.current_action.cooldown_progress = self.current_action.cooldown
+            self.__init__(self.reject_dups)
 
     def do_action(self, action, interrupt=False):
         now = time.time()
