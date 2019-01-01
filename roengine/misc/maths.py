@@ -100,26 +100,63 @@ def get_cyclops(n, base=10):
     return base ** (2 * n + 1) - base ** n - 1
 
 
+DECIMAL_CHR = '.'
+MAX_PRECISION = 10
 def to_base(n, base=2, exp='str(%s)'):  # Use exp=chr(%s) for base256
+    schr = eval(exp % '0')
+    if n == 0:
+        return schr
+    prefix = '+' if n >= 0 else '-'
+    digits = ''
+    n = abs(n)
+    dec = n - int(n)
+    dec_digits = ""
+    place = -1
+    iternum = 0
+    while dec > 0 and iternum < MAX_PRECISION:
+        digit = min(int(dec / base ** place), base-1)  # How many times could we fit without going over?
+        dec_digits += str(digit)
+        dec -= base ** place * digit
+        iternum += 1
+        place -= 1
+
+    n = int(n)
     numdigits = 0
     while n - base ** numdigits > 0:
         numdigits += 1
-    digits = ""
     done = 0
     while numdigits >= 0:
         digit = (n - done) / base ** numdigits
         done += digit * base ** numdigits
         digits += eval(exp % 'digit')
         numdigits -= 1
-    schr = eval(exp % '0')
-    return digits.lstrip(schr) if digits != schr else digits
+    return prefix + digits.lstrip(schr) + DECIMAL_CHR + dec_digits.rstrip(schr)
+print to_base(3.125)
 
 
 def from_base(n, base=2, exp='int(%s)'):  # Use exp=ord(%s) for base256
     ret = 0
+    isNegative = False
+    n = n.split(DECIMAL_CHR)
+    if len(n) > 1:
+        dec = n[1]
+        place = -1
+        for i in dec:
+            ret += eval(exp % 'i') * base ** place
+            place -= 1
+    n = n[0]
+    if n.startswith('+'):
+        n = n[1:]
+    if n.startswith('-'):
+        n = n[1:]
+        isNegative = True
     for i, v in enumerate(reversed(n)):
         ret += base ** i * eval(exp % 'v')
-    return ret
+    return ret if not isNegative else -ret
+print from_base('11.001')
+
+# b256_dec = lambda x: from_base(x, 256, 'ord(%s)')
+# b256_enc = lambda x: to_base(x, 256, 'chr(%s)')
 
 
 def are_relatively_prime(a, b):
