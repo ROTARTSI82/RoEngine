@@ -2,6 +2,7 @@
 
 import sys
 import itertools
+import math
 
 #__all__ = ['factorize', 'is_prime', 'is_perfect', 'prime_factorize',
 #           'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']
@@ -79,10 +80,20 @@ def is_prime(n):
         return True
 
 
-def find_golden(a, b):
+def is_golden(a, b):
     g = float(max(a, b))
     l = float(min(a, b))
     return g / l, (g + l) / g
+
+
+def find_golden(x):
+    while True:
+        yield x
+        x = math.sqrt(1 + x)
+
+
+def find_fib(n, phi=(5 ** 0.5 * 0.5 + 0.5)):
+    return ( phi ** n - (1-phi) ** n ) / math.sqrt(5)
 
 
 def gen_fib():
@@ -96,53 +107,57 @@ def gen_fib():
         yield y
 
 
-def get_cyclops(n, base=10):
-    return base ** (2 * n + 1) - base ** n - 1
+def get_cyclops(n, base=10, add=1):
+    return base ** (2 * n + add) - base ** n - 1
 
 
 DECIMAL_CHR = '.'
-MAX_PRECISION = 10
+MAX_PRECISION = float('inf')
 def to_base(n, base=2, exp='str(%s)'):  # Use exp=chr(%s) for base256
+    suffix = ""
     schr = eval(exp % '0')
     if n == 0:
         return schr
     prefix = '+' if n >= 0 else '-'
     digits = ''
     n = abs(n)
+
     dec = n - int(n)
     dec_digits = ""
     place = -1
     iternum = 0
     while dec > 0 and iternum < MAX_PRECISION:
         digit = min(int(dec / base ** place), base-1)  # How many times could we fit without going over?
-        dec_digits += str(digit)
+        dec_digits += eval(exp % 'digit')
         dec -= base ** place * digit
         iternum += 1
         place -= 1
+    if dec_digits:
+        suffix = DECIMAL_CHR + dec_digits.rstrip(schr)
 
     n = int(n)
     numdigits = 0
     while n - base ** numdigits > 0:
         numdigits += 1
-    done = 0
-    while numdigits >= 0:
-        digit = (n - done) / base ** numdigits
-        done += digit * base ** numdigits
+    while n > 0 or numdigits >= 0:
+        digit = n / base ** numdigits
+        n -= digit * base ** numdigits
         digits += eval(exp % 'digit')
         numdigits -= 1
-    return prefix + digits.lstrip(schr) + DECIMAL_CHR + dec_digits.rstrip(schr)
-print to_base(3.125)
+    return prefix + digits.lstrip(schr) + suffix
 
 
 def from_base(n, base=2, exp='int(%s)'):  # Use exp=ord(%s) for base256
     ret = 0
     isNegative = False
     n = n.split(DECIMAL_CHR)
+    if len(n) > 2:
+        raise ValueError("Invalid format: more than 1 decimal point.")
     if len(n) > 1:
         dec = n[1]
         place = -1
         for i in dec:
-            ret += eval(exp % 'i') * base ** place
+            ret += base ** place * eval(exp % 'i')
             place -= 1
     n = n[0]
     if n.startswith('+'):
@@ -153,10 +168,10 @@ def from_base(n, base=2, exp='int(%s)'):  # Use exp=ord(%s) for base256
     for i, v in enumerate(reversed(n)):
         ret += base ** i * eval(exp % 'v')
     return ret if not isNegative else -ret
-print from_base('11.001')
 
-# b256_dec = lambda x: from_base(x, 256, 'ord(%s)')
-# b256_enc = lambda x: to_base(x, 256, 'chr(%s)')
+
+b256_dec = lambda x: from_base(x, 256, 'ord(%s)')
+b256_enc = lambda x: to_base(x, 256, 'chr(%s)')
 
 
 def are_relatively_prime(a, b):
