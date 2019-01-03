@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import pygame
 import numpy
-import random
+import rand
 import wave
 import logging
 import warnings
@@ -225,18 +225,18 @@ def add_static(sound, amount):
     array = pygame.sndarray.samples(sound)
     if CHANNELS == 2:
         for i in range(len(array)):
-                array[i][0] += random.randint(-amount, amount)
-                array[i][1] += random.randint(-amount, amount)
+                array[i][0] += rand.randint(-amount, amount)
+                array[i][1] += rand.randint(-amount, amount)
     else:  # Don't run the if every loop. That's dumb.
         for i in range(len(array)):
-            array[i] += random.randint(-amount, amount)
+            array[i] += rand.randint(-amount, amount)
 
 
 def get_mono_static(duration):
     max_val = 2 ** (BITS - 1) - 1
     min_val = -(2 ** BITS)
     sample_num = int(round(SAMPLE_RATE * duration))
-    ret = numpy.array([random.randint(min_val, max_val) for i in range(sample_num)], dtype=numpy.int16)
+    ret = numpy.array([rand.randint(min_val, max_val) for i in range(sample_num)], dtype=numpy.int16)
     return pygame.sndarray.make_sound(ret), ret
 
 
@@ -246,8 +246,8 @@ def get_stereo_static(duration):
     sample_num = int(round(SAMPLE_RATE * duration))
     ret = numpy.zeros((sample_num, 2), dtype=numpy.int16)
     for i in range(sample_num):
-        ret[i][0] = random.randint(min_val, max_val)
-        ret[i][1] = random.randint(min_val, max_val)
+        ret[i][0] = rand.randint(min_val, max_val)
+        ret[i][1] = rand.randint(min_val, max_val)
     return pygame.sndarray.make_sound(ret), ret
 
 

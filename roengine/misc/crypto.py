@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 
-import random
+import rand
 import logging
 import hashlib
 import os
@@ -62,7 +62,7 @@ class AccountManager(object):
             return ""
         seed = sum(ord(i) for i in psw)
         current_primes = get_primes(psw)
-        random.seed(seed)
+        rand.seed(seed)
         rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0] / 2)
         return rsa.decrypt_p(psw, data, seed)  # use auto seed?
 
@@ -71,7 +71,7 @@ class AccountManager(object):
             return []
         seed = sum(ord(i) for i in psw)
         current_primes = get_primes(psw)
-        random.seed(seed)
+        rand.seed(seed)
         rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0] / 2)
         return rsa.encrypt_p(psw, dat, seed)  # use auto seed?
 
@@ -80,7 +80,7 @@ class AccountManager(object):
             return False
         seed = sum(ord(i) for i in psw)
         current_primes = get_primes(psw)
-        random.seed(seed)
+        rand.seed(seed)
         rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0]/2)
         return rsa.decrypt_p(psw, self.users[user][2], seed)  # use auto seed?
 
@@ -89,7 +89,7 @@ class AccountManager(object):
             return False
         seed = sum(ord(i) for i in psw)
         current_primes = get_primes(psw)
-        random.seed(seed)
+        rand.seed(seed)
         rsa = RSAGenerator(current_primes[0], current_primes[1], PRIME_RANGE[0]/2)
         self.users[user][2] = rsa.encrypt_p(psw, dat, seed)  # use auto seed?
         return self.users[user][2]
@@ -254,11 +254,11 @@ class RSAGenerator(object):
             raise ValueError('p and q cannot be equal')
         n = p * q
         phi = (p - 1) * (q - 1)
-        e = random.randrange(1, phi)  # Can be seeded! :(
+        e = rand.randrange(1, phi)  # Can be seeded! :(
 
         g = gcf(e, phi)
         while g != 1:
-            e = random.randrange(1, phi)  # Can be seeded too! :(
+            e = rand.randrange(1, phi)  # Can be seeded too! :(
             g = gcf(e, phi)
 
         d = multiplicative_inverse(e, phi)
@@ -295,11 +295,11 @@ def multiplicative_inverse(e, phi):
 
 
 def psw_decrypt(ciphertext, psw, seed=0, psw_chunk_size=8):
-    random.seed(ord(psw[0]) if seed == 0 else seed)
+    rand.seed(ord(psw[0]) if seed == 0 else seed)
     ciphertext = xor_dec(ciphertext, psw, False)
     psw_hex = [int(i, 0) for i in split(binascii.hexlify(psw), psw_chunk_size - 1, '0x1')]
     psw_sum = sum([ord(i) for i in psw])
-    split_str = [hex((i-psw_sum)/random.choice(psw_hex)).strip("L")[3:] for i in ciphertext]
+    split_str = [hex((i-psw_sum) / rand.choice(psw_hex)).strip("L")[3:] for i in ciphertext]
     try:
         return vigenere_dec(binascii.unhexlify("".join(split_str)), psw)
     except:
@@ -308,11 +308,11 @@ def psw_decrypt(ciphertext, psw, seed=0, psw_chunk_size=8):
 
 
 def psw_encrypt(plaintext, psw, seed=0, chunk_size=8, psw_chunk_size=8):
-    random.seed(ord(psw[0]) if seed == 0 else seed)
+    rand.seed(ord(psw[0]) if seed == 0 else seed)
     plaintext = vigenere_enc(plaintext, psw)
     psw_sum = sum([ord(i) for i in psw])
     psw_hex = [int(i, 0) for i in split(binascii.hexlify(psw), psw_chunk_size - 1, '0x1')]
-    ret = [int(i, 0)*random.choice(psw_hex)+psw_sum
+    ret = [int(i, 0) * rand.choice(psw_hex) + psw_sum
            for i in split(binascii.hexlify(plaintext), chunk_size - 1, '0x1')]
     return xor_enc(ret, psw, False)
 
