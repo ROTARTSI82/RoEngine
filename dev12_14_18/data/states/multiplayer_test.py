@@ -9,16 +9,9 @@ from roengine.net.cUDP import *
 from roengine import *
 from dev12_14_18.CONFIG import *
 
-VAL = WEAPON_KEYBINDS.keys()
-
-ABVAL = ABILITY_KEYBINDS.keys()
-
-weapon_switch = Action('player', 10, 0)
-
 test_modeLogger = logging.getLogger('multiplayer_test')
 
 VALID_SERV_VER = ['dev12.30.18', ]
-CLIENT_PREDICTION = False
 
 
 class RespawnPopup(PopUp):
@@ -92,6 +85,7 @@ def event_logger(self, event, exclude_events=(), include_events=()):
 
 
 def enter_mult_test(self, old):
+
     self.client = Client('127.0.0.1', 3000, self)
     self.client.load()
     self.TEST_MAP = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
@@ -100,14 +94,17 @@ def enter_mult_test(self, old):
                                         Obstacle([1920, 50], [320, 480]),
                                         Obstacle([100, 100], [320, 405]),
                                         Obstacle([50, 400], [500, 400]))
+    # REMEMBER: Update the server, too.
 
     buttons.set_buttons([])
     self.players = pygame.sprite.Group()
     self.player = BasicCharacter(self)
     self.map = Map([1500, 500])
     self.player.bounds = self.map.get_map()
+    self.player.spawn_locations = [[0, 0], [100, 100], [200, 200]]  # REMEMBER: Update the server, too.
 
-    self.hp_bar = ProgressBar((0, 100), 100, (HUD_RES[0]-200, 25), (2, 2), ((255, 0, 0), (128, 128, 128)))
+    self.hp_bar = ProgressBar((0, self.player.max_hp), 100,
+                              (HUD_RES[0]-200, 25), (2, 2), ((255, 0, 0), (128, 128, 128)))
     self.hp_bar.rect.center = HUD_RES[0]/2, 25
     bullets.set_bounds(self.map.get_map())
 
@@ -136,6 +133,7 @@ def enter_mult_test(self, old):
     self.respawn = RespawnPopup(self)
 
     self.initiated.append('multiplayer_test')
+    self.player.onRespawn()  # Apply the changes we made.
 
 
 def exit_mult_test(self, new):
@@ -160,7 +158,8 @@ def tick_mult_test(self):
     self.hp_txt.update_text("Health: %i" % ceil(self.player.health))
     self.kill_txt.update_text("Score: %i" % round(self.player.score))
     if self.player.mode == 'weapon':
-        self.reload_progress = "%.1f"%(self.player.action_manager.action_duration - self.player.action_manager.progress)
+        self.reload_progress = "%.1f" % \
+                               (self.player.action_manager.action_duration - self.player.action_manager.progress)
         self.reload_txt.update_text(self.reload_progress)
 
         self.ammo_txt.update_text(str(self.player.weapon.ammo) + '/inf')
@@ -206,35 +205,17 @@ def tick_mult_test(self):
         self.player.update_event(event)
         self.universal_events(event)
         if event.type == MOUSEMOTION:
-            pos = self.map.translate_pos(event.dict['pos'])
-            send.append([event.type, {"pos": pos}])
-            self.player.aiming_at = pos
-        if event.type == MOUSEBUTTONDOWN:
+            send.append([event.type, {"pos": self.player.aiming_at}])
+        if event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP:
             send.append([event.type, {"button": event.button}])
-            self.player.firing = True
-        if event.type == MOUSEBUTTONUP:
-            send.append([event.type, {"button": event.button}])
-            self.player.firing = False
-        if event.type == KEYUP:
+        if event.type == KEYUP or event.type == KEYDOWN:
             send.append([event.type, {"key": event.key}])
-        if event.type == KEYDOWN:
-            send.append([event.type, {"key": event.key}])
+            '''
             if event.key == K_DOWN:
                 self.player.health -= 10
             if event.key == K_UP:
                 self.player.health += 10
-            if event.key == K_r and self.player.mode == 'weapon':
-                self.player.weapon.force_reload()
-            if event.key in ABVAL:
-                self.player.action_manager.do_action(weapon_switch, True)
-                self.player.ability = self.player.abilities[ABILITY_KEYBINDS[event.key]]
-                self.player.mode = 'ability'
-                self.weapon_txt.update_text("Ability: " + str(self.player.ability))
-            if event.key in VAL:
-                self.player.action_manager.do_action(weapon_switch, True)
-                self.player.weapon = self.player.inv[WEAPON_KEYBINDS[event.key]]
-                self.player.mode = 'weapon'
-                self.weapon_txt.update_text("Item: " + str(self.player.weapon))
+            '''
             if event.key == K_b:
                 self.update_state('main_menu')
     if send:

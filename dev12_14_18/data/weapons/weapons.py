@@ -6,11 +6,12 @@ from .bullets import *
 
 def _pdw(weapon, str_repr, identifier, type='Weapon'):
     def _predef_weapon_instance(parent, action_manager):
-        ret = eval(type)(*weapon)
+        ret = (Weapon if type == 'Weapon' else Shotgun)(*weapon)
         ret.parent = parent
         ret.actionManager = action_manager
         ret.str_repr = str_repr
-        ret.id = identifier
+        ret.reload_action.name = 'reload.%s' % str_repr
+        ret.id = identifier  # why? this is never used...
         return ret
     return _predef_weapon_instance
 

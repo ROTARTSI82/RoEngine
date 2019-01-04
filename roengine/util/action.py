@@ -6,12 +6,13 @@ __all__ = ['ActionManager', 'Action']
 
 
 class Action(object):
-    def __init__(self, action_type, action_id, duration, cooldown=0):
+    def __init__(self, name, action_id, duration, cooldown=0):
+        # print ("New Action<'%s' id=%s>" % (name, action_id))
         self.cooldown = cooldown
         self.last_use = 0
         self.cooldown_progress = 0
         self.duration = duration
-        self.action_type = action_type
+        self.name = name
         self.action_id = action_id
 
     def get_cooldown(self):

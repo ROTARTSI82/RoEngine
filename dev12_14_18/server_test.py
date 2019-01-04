@@ -55,6 +55,7 @@ class ServerTest(Game):
                                             Obstacle([1920, 50], [320, 480]),
                                             Obstacle([100, 100], [320, 405]),
                                             Obstacle([50, 400], [500, 400]))
+        # REMEMBER: Update the client, too.
 
         buttons.set_buttons([])
         self.players = pygame.sprite.Group()
@@ -119,9 +120,11 @@ class ServerTest(Game):
 
     def new_player(self):
         np = BasicCharacter(self)
+        np.spawn_locations = [[0, 0], [100, 100], [200, 200]]  # REMEMBER: Update the client, too.
         np.bounds = self.map.get_map()
         np.collidables = self.TEST_MAP.copy()
         bullets.shootables.add(np)
+        np.onRespawn()  # Apply these changes.
         self.players.add(np)
         return np
 
@@ -168,11 +171,11 @@ class MyProtocol(ServerUDP):
             if event.type == KEYDOWN:
                 if event.key == K_r and self.player.mode == 'weapon':
                     self.player.weapon.force_reload()
-                if event.key in ABVAL:
+                if event.key in ABILITY_KEYS:
                     self.player.action_manager.do_action(weapon_switch, True)
                     self.player.ability = self.player.abilities[ABILITY_KEYBINDS[event.key]]
                     self.player.mode = 'ability'
-                if event.key in VAL:
+                if event.key in WEAPON_KEYS:
                     self.player.action_manager.do_action(weapon_switch, True)
                     self.player.weapon = self.player.inv[WEAPON_KEYBINDS[event.key]]
                     self.player.mode = 'weapon'

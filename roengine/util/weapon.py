@@ -155,11 +155,8 @@ class Weapon(object):
         self.str_repr = 'Generic Weapon'
 
         self.reloading = False
-        self.reload_action = _ReloadAction('weapon', 8, reload_time, self)
+        self.reload_action = _ReloadAction('reload.%s' % self.str_repr, 1, reload_time, self)
         # damage per second / shots per second = damage per shot
-
-    def set_str(self, string):
-        self.str_repr = string
 
     def __str__(self):
         return self.str_repr

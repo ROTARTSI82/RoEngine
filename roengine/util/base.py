@@ -12,6 +12,38 @@ from twisted.internet import reactor
 
 __all__ = ["Dummy", "Game", "Obstacle"]
 
+"""
+Usage:
+>>> isAdmin = newflag(3)  # isAdmin: 8 (int)
+>>> isModerator = newflag(2)  # isModerator: 4 (int)
+>>> Bob = isAdmin | isModerator
+>>> Alice = isModerator
+>>> if isModerator in get_flags(Alice):  # get_flags(Alice) == [4, ]
+...     -- INSERT CODE HERE --
+>>> get_flags(Bob)
+[4, 8]
+
+"""
+
+_flaglist = []
+
+
+def newflag(num):
+    _flaglist.append(1 << num)
+    return 1 << num
+
+
+def get_flags(num):
+    ret = []
+    for i in _flaglist:
+        if num & i:
+            ret.append(i)
+    return ret
+
+
+def are_flags_set(num, flags, mode='all'):
+    return globals()['__builtins__'][mode]([num & i for i in flags])
+
 
 class Dummy(object):
 

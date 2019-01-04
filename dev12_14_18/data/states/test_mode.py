@@ -7,12 +7,6 @@ from pygame.locals import *
 from roengine import *
 from dev12_14_18.CONFIG import *
 
-VAL = WEAPON_KEYBINDS.keys()
-
-ABVAL = ABILITY_KEYBINDS.keys()
-
-weapon_switch = Action('player', 10, 0)
-
 test_modeLogger = logging.getLogger('test_mode')
 
 
@@ -125,31 +119,37 @@ def tick_test_mode(self):
         if event.type == MOUSEBUTTONUP:
             self.player.firing = False
         if event.type == KEYDOWN:
+            '''
             if event.key == K_DOWN:
                 self.player.health -= 10
             if event.key == K_UP:
                 self.player.health += 10
             if event.key == K_r and self.player.mode == 'weapon':
                 self.player.weapon.force_reload()
+            '''
             if event.key == K_e:
                 n = TargetDummy()
                 n.bounds = self.map.get_map()
                 n.collidables = self.TEST_MAP.copy()
                 bullets.shootables.add(n)
                 self.enemies.add(n)
-            if event.key in ABVAL:
+            '''
+            if event.key in ABILITY_KEYS:
                 self.player.action_manager.do_action(weapon_switch, True)
                 self.player.ability = self.player.abilities[ABILITY_KEYBINDS[event.key]]
                 self.player.mode = 'ability'
                 # self.logger.debug('ABILITY switching to %s', str(self.player.ability))
                 self.weapon_txt.update_text("Ability: " + str(self.player.ability))
+            '''
             if event.key == K_0:  # Instant reload
                 self.player.weapon.ammo = self.player.weapon.maxMag
-            if event.key in VAL:
+            '''
+            if event.key in WEAPON_KEYS:
                 self.player.action_manager.do_action(weapon_switch, True)
                 self.player.weapon = self.player.inv[WEAPON_KEYBINDS[event.key]]
                 self.player.mode = 'weapon'
                 # self.logger.debug('WEAPON switching to %s', str(self.player.weapon))
                 self.weapon_txt.update_text("Item: " + str(self.player.weapon))
+            '''
             if event.key == K_b:
                 self.update_state('main_menu')

@@ -1,10 +1,15 @@
 import pygame
 import time
+import random
 
 from pygame.locals import *
 from roengine import *
-from dev12_14_18.CONFIG import BASIC_KEYBINDS
+from dev12_14_18.CONFIG import *
 from dev12_14_18.data.weapons.weapons import *
+
+WEAPON_KEYS = WEAPON_KEYBINDS.keys()
+ABILITY_KEYS = ABILITY_KEYBINDS.keys()
+_weapon_switch = Action('weapon_switch', 0, 0)
 
 
 class Dash(Action):
@@ -12,7 +17,7 @@ class Dash(Action):
         self.id = 1
         self.player = player
         self.game = game
-        Action.__init__(self, 'ability', 5, 0, 5)
+        Action.__init__(self, 'ability.dash', 129, 0, 5)
 
     def __str__(self): return "Dash"
 
@@ -26,7 +31,7 @@ class Flight(Action):
         self.id = 2
         self.player = player
         self.game = game
-        Action.__init__(self, 'ability', 4, 5, 30)
+        Action.__init__(self, 'ability.flight', 128, 5, 30)
 
     def __str__(self): return "Flight"
 
@@ -44,6 +49,7 @@ class BasicCharacter(PlatformerPlayer):
         PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
         self.image.fill([0, 0, 255])
         self.health = 100
+        self.max_hp = 100
         self.defense = 1
 
         self.kills = 0
@@ -53,6 +59,7 @@ class BasicCharacter(PlatformerPlayer):
         self.game = game
         self.respawn_start = 0
         self.alive = True
+        self.spawn_locations = [[0, 0], ]
 
         self.speed = 5
         self.firing = False
@@ -69,6 +76,58 @@ class BasicCharacter(PlatformerPlayer):
     def onDamageDealt(self, amount):
         self.score += (1+self.streak*self.streak_multiplier) * amount
 
+    def onRespawn(self):
+        """
+        Reset all our attributes.
+        :return: None
+        """
+        self.position = pygame.math.Vector2(random.choice(self.spawn_locations))
+        self.velocity = pygame.math.Vector2(0, 0)
+        self.rotation = 0
+        self.update_rect()
+
+        self.is_climbing = False
+        self.grounded = False
+        self.firing = False
+
+        self.input_state = {"forward": False, "backward": False, "jump": False}
+        self.alive = True
+        self.health = self.max_hp
+        self.streak = 0
+
+        self.aiming_at = [0, 0]
+        self.action_manager = ActionManager()
+        WArgs = (self, self.action_manager)
+        self.inv = {'weapon_1': SMG(*WArgs), 'weapon_2': AssaultRifle(*WArgs), 'weapon_3': AutomaticShotgun(*WArgs),
+                    'weapon_4': Sniper(*WArgs)}
+        self.abilities = {'ability_1': Dash(self, self.game), 'ability_2': Flight(self, self.game)}
+        self.ability = self.abilities['ability_1']
+        self.mode = 'weapon'
+        self.weapon = self.inv['weapon_1']
+
+    def update_event(self, event):
+        PlatformerPlayer.update_event(self, event)
+        if event.type == KEYDOWN:
+            if event.key == K_r and self.mode == 'weapon':
+                self.weapon.force_reload()
+            if event.key in ABILITY_KEYS:
+                self.action_manager.do_action(_weapon_switch, True)
+                self.ability = self.abilities[ABILITY_KEYBINDS[event.key]]
+                self.mode = 'ability'
+                self.game.weapon_txt.update_text("Ability: " + str(self.ability))
+            if event.key in WEAPON_KEYS:
+                self.action_manager.do_action(_weapon_switch, True)
+                self.weapon = self.inv[WEAPON_KEYBINDS[event.key]]
+                self.mode = 'weapon'
+                self.game.weapon_txt.update_text("Item: " + str(self.weapon))
+        if event.type == MOUSEMOTION:
+            pos = self.game.map.translate_pos(event.dict['pos'])
+            self.aiming_at = pos
+        if event.type == MOUSEBUTTONDOWN:
+            self.firing = True
+        if event.type == MOUSEBUTTONUP:
+            self.firing = False
+
     def damage(self, damage, bullet):
         bullet.req_kill()
         bullet.parent.onDamageDealt(damage)
@@ -83,6 +142,7 @@ class BasicCharacter(PlatformerPlayer):
             self.respawn_start = time.time()
 
     def update(self):
+        self.health = max(min(self.health, self.max_hp), 0)  # Do we have to do this every frame?
         self.action_manager.tick()
         self.weapon.tick()
         if self.health <= 0 and self.alive:
@@ -100,8 +160,7 @@ class BasicCharacter(PlatformerPlayer):
             PlatformerPlayer.update(self)
         else:
             if time.time()-self.respawn_start > self.respawn_cool:
-                self.alive = True
-                self.health = 100
+                self.onRespawn()
 
 
 class TargetDummy(PlatformerPlayer):
