@@ -1,15 +1,5 @@
 # -*- coding: UTF-8 -*-
 
-"""
-Components required for Multiplayer:
- - PREDICTION: Client predicts what would happen (duh)
- - RECONCILIATION: Client discards any packets from server if all inputs haven't been acknowledged.
- - INTERPOLATION: Client plays back what it think the other player did to end up at current state
-
- Server sends: Current game state + last input it processed.
- Client sends: Input + input number
- UDP connection? Packets may get lost...
-"""
 import logging
 import warnings
 import traceback
@@ -34,6 +24,7 @@ from data.states import *
 # Come up with a actual name...
 # Optimize test_mode.py:53-62 (Do we need to update these every frame?)
 # player.check_bottom_grounded
+# Client doesn't quit after backing out.
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder

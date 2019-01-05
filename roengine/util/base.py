@@ -134,10 +134,25 @@ class Obstacle(pygame.sprite.Sprite):
 
         self.climb_difficulty = lvl
 
+        self.size = size
+        self.color = color
         self.image = pygame.Surface(size).convert()
         self.image.fill(color)
         self.rect = self.image.get_rect()
         self.rect.center = pos
+
+    def copy(self):
+        return Obstacle(self.size, self.rect.center, self.climb_difficulty, self.color)
+
+    def update_size(self):
+        oldPos = self.rect.center
+        try:
+            self.image = pygame.Surface(self.size).convert()
+        except pygame.error:  # Invalid size. just don't do anything.
+            pass
+        self.image.fill(self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = oldPos
 
     def on_collide(self, face, player):
         pass

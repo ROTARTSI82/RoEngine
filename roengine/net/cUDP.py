@@ -4,12 +4,13 @@ from __future__ import print_function
 
 import rencode
 import logging
+import socket
 
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
 
 
-__all__ = ['ServerUDP', 'EnqueUDPClient', 'UDPServerFactory']
+__all__ = ['ServerUDP', 'EnqueUDPClient', 'UDPServerFactory', 'adopt_udp_port']
 
 load = rencode.loads
 dump = rencode.dumps
@@ -26,6 +27,25 @@ LOG_GETS = False
 def cUDP_settings(lsends=False, lgets=False, lnhdlrs=False):
     global LOG_GETS, LOG_SENDS, LOG_NO_HANDLERS
     LOG_SENDS, LOG_GETS, LOG_NO_HANDLERS = lsends, lgets, lnhdlrs
+
+
+def adopt_udp_port(cls, addr=('127.0.0.1', 3000), args=(), kwargs={}):
+    """
+    From https://twistedmatrix.com/documents/15.1.0/core/howto/udp.html
+
+    :param cls:
+    :return: None
+    """
+    portSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # Make the port non-blocking and start it listening.
+    portSocket.setblocking(False)
+    portSocket.bind(addr)
+
+    # Now pass the port file descriptor to the reactor
+    port = reactor.adoptDatagramPort(portSocket.fileno(), socket.AF_INET, cls(*args, **kwargs))
+
+    # The portSocket should be cleaned up by the process that creates it.
+    return portSocket, port
 
 
 class ServerUDP(object):

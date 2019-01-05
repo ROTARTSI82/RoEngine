@@ -1,6 +1,8 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+import socket
+from roengine.net.rencode import dumps
 from math import ceil
 
 from dev12_14_18.data.characters.base import *
@@ -12,6 +14,7 @@ from dev12_14_18.CONFIG import *
 test_modeLogger = logging.getLogger('multiplayer_test')
 
 VALID_SERV_VER = ['dev12.30.18', ]
+DEBUG = True
 
 
 class RespawnPopup(PopUp):
@@ -49,10 +52,20 @@ class RespawnPopup(PopUp):
 class Client(EnqueUDPClient):
     def __init__(self, host, port, game):
         EnqueUDPClient.__init__(self, host, port)
+        self.send_bytes = 0
+        self.recv_bytes = 0
+        self.start = time.time()
         self.game = game
 
     def tick(self):
+        if DEBUG and self.send_que:
+            self.send_bytes += len(dumps(self.send_que))
         self.empty_que()
+
+    def datagramReceived(self, message, address):
+        if DEBUG:
+            self.recv_bytes += len(message)
+        EnqueUDPClient.datagramReceived(self, message, address)
 
     def network_bullets(self, msg, addr):
         bullets._bullets = pygame.sprite.Group(*[Obstacle([10, 10], i) for i in msg['bullets']])
@@ -119,6 +132,10 @@ def enter_mult_test(self, old):
     self.weapon_txt = Text("Item: " + str(self.player.weapon), bg=(255, 255, 255))
     self.weapon_txt.rect.center = HUD_RES[0] / 2, 55
 
+    self.debug_txt = Text("Ping: 0 | Recv: 0 | Send: 0", bg=(255, 255, 255))
+    self.debug_txt.rect.centerx = HUD_RES[0] / 2
+    self.debug_txt.rect.bottom = HUD_RES[1] - 5
+
     self.hp_txt = Text("Health: " + str(self.player.health))
     self.hp_txt.rect.center = self.hp_bar.rect.center
 
@@ -157,6 +174,11 @@ def tick_mult_test(self):
     self.hp_bar.update()
     self.hp_txt.update_text("Health: %i" % ceil(self.player.health))
     self.kill_txt.update_text("Score: %i" % round(self.player.score))
+    if DEBUG:
+        since_start = (time.time() - self.client.start) * 1000  # Measure in Kb
+        txt = "Recv: %.2fKB/s | Send: %.2fKB/s" % (self.client.recv_bytes / since_start,
+                                                   self.client.send_bytes / since_start)
+        self.debug_txt.update_text(txt)
     if self.player.mode == 'weapon':
         self.reload_progress = "%.1f" % \
                                (self.player.action_manager.action_duration - self.player.action_manager.progress)
@@ -175,6 +197,8 @@ def tick_mult_test(self):
     self.hud_layer.draw_sprite(self.kill_txt)
     self.hud_layer.draw_sprite(self.hp_bar)
     self.hud_layer.draw_sprite(self.hp_txt)
+    if DEBUG:
+        self.hud_layer.draw_sprite(self.debug_txt)
     if self.ammo_txt.text != '0.0':
         self.hud_layer.draw_sprite(self.ammo_txt)
     self.hud_layer.draw_sprite(self.weapon_txt)

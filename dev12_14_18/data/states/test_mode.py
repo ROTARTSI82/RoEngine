@@ -27,6 +27,7 @@ def enter_test_mode(self, old):
 
     buttons.set_buttons([])
     self.player = BasicCharacter(self)
+    self.player.spawn_locations = [[0, 0], [100, 100]]
     self.map = Map([1500, 500])
     self.player.bounds = self.map.get_map()
 
@@ -54,6 +55,7 @@ def enter_test_mode(self, old):
 
     self.enemies = pygame.sprite.Group()
     self.initiated.append('test_mode')
+    self.player.onRespawn()
 
 
 def exit_test_mode(self, new):
@@ -119,14 +121,14 @@ def tick_test_mode(self):
         if event.type == MOUSEBUTTONUP:
             self.player.firing = False
         if event.type == KEYDOWN:
-            '''
+            # '''
             if event.key == K_DOWN:
                 self.player.health -= 10
             if event.key == K_UP:
                 self.player.health += 10
             if event.key == K_r and self.player.mode == 'weapon':
                 self.player.weapon.force_reload()
-            '''
+            # '''
             if event.key == K_e:
                 n = TargetDummy()
                 n.bounds = self.map.get_map()

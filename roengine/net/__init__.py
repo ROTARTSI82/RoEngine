@@ -14,4 +14,4 @@ from .tcp import *
 from .cUDP import *
 
 __all__ = ['GenericTCPClient', 'GenericClientFactory', 'reactor', 'GenericTCPServer', 'GenericServerFactory',
-           'ServerUDP', 'EnqueUDPClient', 'UDPServerFactory']
+           'ServerUDP', 'EnqueUDPClient', 'UDPServerFactory', 'adopt_udp_port']
