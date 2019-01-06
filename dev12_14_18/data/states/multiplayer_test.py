@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 import logging
-import socket
+import json
 from roengine.net.rencode import dumps
 from math import ceil
 
@@ -15,6 +15,7 @@ test_modeLogger = logging.getLogger('multiplayer_test')
 
 VALID_SERV_VER = ['dev12.30.18', ]
 DEBUG = True
+NAME = raw_input("Enter your nickname: ")
 
 
 class RespawnPopup(PopUp):
@@ -49,6 +50,44 @@ class RespawnPopup(PopUp):
         self.is_open = False
 
 
+class LeaderboardPopup(PopUp):
+    def __init__(self, game):
+        PopUp.__init__(self)
+        self.game = game
+        self.text = Text("Leader Board", (HUD_RES[0]/2, 50), fg=(255, 255, 255))
+        self.board = [Text("", (HUD_RES[0] / 2, 50 + 50 * i), fg=(255, 255, 255)) for i in range(1, 11)]
+        self.filter = pygame.Surface(self.game.screen.get_size(), pygame.SRCALPHA, 32).convert()
+        self.filter.set_alpha(200)
+
+    def open(self):
+        self.update_filter()
+        self.is_open = True
+
+    def update_filter(self):
+        self.filter = pygame.Surface(self.game.screen.get_size(), pygame.SRCALPHA, 32).convert()
+        self.filter.set_alpha(200)
+
+    def tick_main(self):
+        self.game.screen.blit(self.filter, [0, 0])
+        self.game.hud_layer._map = self.game.clear_surf.copy()
+        self.game.hud_layer.draw_sprite(self.text)
+        for i, v in enumerate(self.game.leaders):
+            # stats.append([i.score, i.name, i.kills])
+            self.board[i].update_text("%s: %s | %i points | %i kills" % (i + 1, v[1], v[0], v[2]))
+        for i in self.board:
+            self.game.hud_layer.draw_sprite(i)
+        for event in pygame.event.get():
+            self.game.universal_events(event)
+            if event.type == KEYDOWN:
+                if event.key == K_l:
+                    popups.close()
+            if event.type == VIDEORESIZE:
+                self.update_filter()
+
+    def close(self, reason):
+        self.is_open = False
+
+
 class Client(EnqueUDPClient):
     def __init__(self, host, port, game):
         EnqueUDPClient.__init__(self, host, port)
@@ -56,6 +95,7 @@ class Client(EnqueUDPClient):
         self.recv_bytes = 0
         self.start = time.time()
         self.game = game
+        self.verify_send({"action": "cli_settings", "name": NAME})
 
     def tick(self):
         if DEBUG and self.send_que:
@@ -67,27 +107,38 @@ class Client(EnqueUDPClient):
             self.recv_bytes += len(message)
         EnqueUDPClient.datagramReceived(self, message, address)
 
-    def network_bullets(self, msg, addr):
+    def network_update(self, msg, addr):
+        self.game.leaders = msg['stat']
         bullets._bullets = pygame.sprite.Group(*[Obstacle([10, 10], i) for i in msg['bullets']])
-
-    def network_settings(self, msg, addr):
-        if not msg['ver'] in VALID_SERV_VER:
-            test_modeLogger.critical("Invalid server version: %s", msg['ver'])
-
-    def network_players(self, msg, addr):
         self.game.players = pygame.sprite.Group(*[Obstacle([16, 16], i, color=(0, 0, 255)) for i in msg['players']])
 
-    def network_self(self, msg, addr):
         self.game.player.score = msg['score']
         self.game.player.rect.center = msg['pos']
         self.game.player.health = msg['hp']
         self.game.player.update_pos()
         self.game.player.mode = 'weapon' if msg['item'][0] == 'w' else 'ability'
         if self.game.player.mode == 'weapon':
-            self.game.player.weapon = self.game.player.inv['weapon_'+msg['item'][1:]]
+            self.game.player.weapon = self.game.player.inv['weapon_' + msg['item'][1:]]
             self.game.player.ammo = msg['ammo']
         if self.game.player.mode == 'ability':
-            self.game.player.ability = self.game.player.abilities['ability_'+msg['item'][1:]]
+            self.game.player.ability = self.game.player.abilities['ability_' + msg['item'][1:]]
+
+    def network_settings(self, msg, addr):
+        if not msg['ver'] in VALID_SERV_VER:
+            test_modeLogger.critical("Invalid server version: %s", msg['ver'])
+        try:
+            with open("./data/maps/%s.json" % msg['map'], 'r') as fp:
+                map_json = json.load(fp)
+            self.game.TEST_MAP = pygame.sprite.Group()
+            for i in map_json['blocks']:
+                self.game.TEST_MAP.add(Obstacle(i['size'], i['pos'], 1, i['color']))
+            self.game.background_col = map_json['background']['color']
+            self.game.spawn_locs = map_json['spawns']
+            self.game.player.spawn_locations = self.game.spawn_locs
+            self.game.player.onRespawn()
+        except (ValueError, IOError, KeyError):
+            # TODO: Add individual try/except cluases for each element (map, background color, spawn locations)
+            test_modeLogger.exception("Failed to load map: ")
 
 
 def event_logger(self, event, exclude_events=(), include_events=()):
@@ -98,7 +149,7 @@ def event_logger(self, event, exclude_events=(), include_events=()):
 
 
 def enter_mult_test(self, old):
-
+    self.leaders = []
     self.client = Client('127.0.0.1', 3000, self)
     self.client.load()
     self.TEST_MAP = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
@@ -107,6 +158,8 @@ def enter_mult_test(self, old):
                                         Obstacle([1920, 50], [320, 480]),
                                         Obstacle([100, 100], [320, 405]),
                                         Obstacle([50, 400], [500, 400]))
+    self.spawn_locs = [[0, 0]]
+    self.background_col = [255, 255, 255]
     # REMEMBER: Update the server, too.
 
     buttons.set_buttons([])
@@ -114,7 +167,7 @@ def enter_mult_test(self, old):
     self.player = BasicCharacter(self)
     self.map = Map([1500, 500])
     self.player.bounds = self.map.get_map()
-    self.player.spawn_locations = [[0, 0], [100, 100], [200, 200]]  # REMEMBER: Update the server, too.
+    self.player.spawn_locations = self.spawn_locs  # REMEMBER: Update the server, too.
 
     self.hp_bar = ProgressBar((0, self.player.max_hp), 100,
                               (HUD_RES[0]-200, 25), (2, 2), ((255, 0, 0), (128, 128, 128)))
@@ -148,6 +201,7 @@ def enter_mult_test(self, old):
     self.ammo_txt.rect.centery = 55
 
     self.respawn = RespawnPopup(self)
+    self.leaderboard = LeaderboardPopup(self)
 
     self.initiated.append('multiplayer_test')
     self.player.onRespawn()  # Apply the changes we made.
@@ -164,7 +218,7 @@ def tick_mult_test(self):
     pygame.display.set_caption(str(self.clock.get_fps()))
 
     self.player.update()
-    bullets.update()
+    # bullets.update()  # Its full of obstacle objects lol
 
     if (not self.player.alive) and (not self.respawn.is_open):
         # print ("Opening popup")
@@ -205,7 +259,7 @@ def tick_mult_test(self):
     if self.reload_txt.text != '0.0':
         self.hud_layer.draw_sprite(self.reload_txt)
 
-    self.map.fill([255, 255, 255])
+    self.map.fill(self.background_col)
     self.map.draw_group(self.TEST_MAP)
     self.map.draw_sprite(self.player)
     self.map.draw_group(self.players)
@@ -215,14 +269,16 @@ def tick_mult_test(self):
     self.map.scale_to(self.screen, MAP_ZOOM)
     self.map.blit_to(self.screen)
 
-    if popups.tick():
-        self.player.firing = False
-        self.player.input_state = {"forward": False, "backward": False, "jump": False}
+    popup_open = popups.tick()
     self.hud_layer.scale_to(self.screen, [1, 1])
     self.hud_layer.blit_to(self.screen)
 
     pygame.display.update(self.current_rect)
 
+    if popup_open:
+        self.player.firing = False
+        self.player.input_state = {"forward": False, "backward": False, "jump": False}
+        return
     send = []
     for event in pygame.event.get():
         event_logger(self, event)
@@ -232,8 +288,10 @@ def tick_mult_test(self):
             send.append([event.type, {"pos": self.player.aiming_at}])
         if event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP:
             send.append([event.type, {"button": event.button}])
-        if event.type == KEYUP or event.type == KEYDOWN:
+        if event.type == KEYDOWN:
             send.append([event.type, {"key": event.key}])
+            if event.key == K_l:
+                popups.open(self.leaderboard)
             '''
             if event.key == K_DOWN:
                 self.player.health -= 10
@@ -242,5 +300,7 @@ def tick_mult_test(self):
             '''
             if event.key == K_b:
                 self.update_state('main_menu')
+        if event.type == KEYUP:
+            send.append([event.type, {"key": event.key}])
     if send:
         self.client.enque({"action": "event", "events": send})

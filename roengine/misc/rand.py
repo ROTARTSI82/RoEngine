@@ -100,10 +100,10 @@ class XORShift(object):
 
     def xorshift1024star(self):
         p, s = self.state['1024*']
-        p += 1
         s0 = s[p]
-        p &= 15
+        p += 1
         s1 = s[p]
+        p &= 15
         s1 ^= s1 << 31 # a
         s1 ^= s1 >> 11 # b
         s1 ^= s0 ^ (s0 >> 30) # c

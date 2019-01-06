@@ -51,6 +51,7 @@ class BasicCharacter(PlatformerPlayer):
         self.health = 100
         self.max_hp = 100
         self.defense = 1
+        self.name = 'Player'
 
         self.kills = 0
         self.score = 0

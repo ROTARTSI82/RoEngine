@@ -15,7 +15,7 @@ from dev12_14_18.CONFIG import *
 
 logger = logging.getLogger('map_editor')
 
-LOADFILE = '/Users/Grant/Desktop/PyCharm/RoEngine/dev12_14_18/data/maps/untitled.json'
+LOADFILE = './data/maps/untitled.json'
 
 
 def event_logger(self, event, exclude_events=(), include_events=()):
@@ -113,7 +113,7 @@ class MapEditor(Game):
         self.spawn_loc = dat['spawns']
         self.background_col = dat['background']["color"]
         for i in dat["blocks"]:
-            self.TEST_MAP.add(Obstacle(i['size'], i['pos'], 1, i['color']))
+            self.TEST_MAP.add(Obstacle(i['size'], i['pos'], 1, i['color']))  # Climb difficulty isn't saved.. yet
         self.selected = None
         self.clip = None
 
@@ -270,6 +270,8 @@ class MapEditor(Game):
                     self.adjust_size(0, -5)
                 if event.key == K_RIGHT and self.selected is not None:
                     self.adjust_size(0, +5)
+                if event.key == K_j:
+                    self.player.onRespawn()
                 if event.key == K_o and self.selected is not None:
                     reset = False
                     if self.selected is None:
@@ -302,7 +304,7 @@ class MapEditor(Game):
                            "spawns": self.spawn_loc}
                     for i in self.TEST_MAP.sprites():
                         exp["blocks"].append({"name": "solid_color", "size": i.size, "color": i.color,
-                                              "pos": i.rect.center})
+                                              "pos": i.rect.center})  # Climb difficulty isn't saved.. yet
                     pprint(exp)
 
 

@@ -5,7 +5,7 @@ Defines [Dummy] and [Game]
 """
 
 import pygame
-import random
+import logging
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
@@ -24,6 +24,8 @@ Usage:
 [4, 8]
 
 """
+
+logger = logging.getLogger("util.base")
 
 _flaglist = []
 
@@ -156,6 +158,9 @@ class Obstacle(pygame.sprite.Sprite):
 
     def on_collide(self, face, player):
         pass
+
+    def bullet_on_collide(self, col_list):
+        logger.critical("bullet_on_collide of an Obstacle was called!")
 
     def damage(self, damage, parent):
         parent.req_kill()

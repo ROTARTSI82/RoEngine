@@ -2,6 +2,7 @@
 
 import pygame
 import logging
+import json
 from pygame.locals import *
 
 import sys
@@ -21,7 +22,7 @@ hdlr.setFormatter(formatter)
 root.addHandler(hdlr)
 
 VAL = WEAPON_KEYBINDS.keys()
-
+CURRENT_MAP = 'untitled'
 ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
@@ -49,12 +50,7 @@ class ServerTest(Game):
 
         self.hud_layer = Map(HUD_RES)
         self.clear_surf = pygame.Surface(HUD_RES, SRCALPHA, 32)
-        self.TEST_MAP = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
-                                            Obstacle([100, 10], [150, 428]),
-                                            Obstacle([10, 400], [250, 28]),
-                                            Obstacle([1920, 50], [320, 480]),
-                                            Obstacle([100, 100], [320, 405]),
-                                            Obstacle([50, 400], [500, 400]))
+        self.enter_serv_test('main')
         # REMEMBER: Update the client, too.
 
         buttons.set_buttons([])
@@ -104,12 +100,25 @@ class ServerTest(Game):
             test_modeLogger.debug("Event%s: %s", event.type, event.dict)
 
     def enter_serv_test(self, old):
-        self.TEST_MAP = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
-                                            Obstacle([100, 10], [150, 428]),
-                                            Obstacle([10, 400], [250, 28]),
-                                            Obstacle([1920, 50], [320, 480]),
-                                            Obstacle([100, 100], [320, 405]),
-                                            Obstacle([50, 400], [500, 400]))
+        try:
+            with open("./data/maps/%s.json" % CURRENT_MAP, 'r') as fp:
+                map_json = json.load(fp)
+            self.TEST_MAP = pygame.sprite.Group()
+            for i in map_json['blocks']:
+                self.TEST_MAP.add(Obstacle(i['size'], i['pos'], 1, i['color']))
+            self.background_col = map_json['background']['color']
+            self.spawn_locs = map_json['spawns']
+        except (ValueError, IOError, KeyError):
+            # TODO: Add individual try/except cluases for each element (map, background color, spawn locations)
+            test_modeLogger.exception("Failed to load map: ")
+            self.TEST_MAP = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
+                                                Obstacle([100, 10], [150, 428]),
+                                                Obstacle([10, 400], [250, 28]),
+                                                Obstacle([1920, 50], [320, 480]),
+                                                Obstacle([100, 100], [320, 405]),
+                                                Obstacle([50, 400], [500, 400]))
+            self.background_col = [255, 255, 255]
+            self.spawn_locs = [[0, 0], ]
 
         buttons.set_buttons([])
         self.players = pygame.sprite.Group()
@@ -120,7 +129,7 @@ class ServerTest(Game):
 
     def new_player(self):
         np = BasicCharacter(self)
-        np.spawn_locations = [[0, 0], [100, 100], [200, 200]]  # REMEMBER: Update the client, too.
+        np.spawn_locations = self.spawn_locs  # REMEMBER: Update the client, too.
         np.bounds = self.map.get_map()
         np.collidables = self.TEST_MAP.copy()
         bullets.shootables.add(np)
@@ -140,7 +149,7 @@ class ServerTest(Game):
 
         [i.tick() for i in factory.client_protocols.values()]
 
-        self.map.fill([255, 255, 255])
+        self.map.fill(self.background_col)
         self.map.draw_group(self.TEST_MAP)
         self.map.draw_group(self.players)
         self.map.draw_group(bullets.get_group())
@@ -180,6 +189,10 @@ class MyProtocol(ServerUDP):
                     self.player.weapon = self.player.inv[WEAPON_KEYBINDS[event.key]]
                     self.player.mode = 'weapon'
 
+    def network_cli_settings(self, msg):
+        print ("Got %s" % msg['name'])
+        self.player.name = msg['name']
+
     def tick(self):
         '''
         if self.frame_num == 0:
@@ -191,17 +204,35 @@ class MyProtocol(ServerUDP):
             self.frame_num = -1  # 0 frame wait since frame_num is incremented
         self.frame_num += 1
         '''
-        self.update_bullets()
-        self.update_players()
-        self.update_self()
+        sdict = {}
+        sdict.update(self.update_bullets())
+        sdict.update(self.update_players())
+        sdict.update(self.update_self())
+        sdict.update(self.update_stat())
+        sdict['action'] = 'update'
+        self.enque(sdict)
         self.empty_que()
 
     def update_players(self):
-        self.enque({"action": "players", "players":
-            [i.rect.center for i in game.players.sprites() if i != self.player and i.alive]})
+        rdict = {"action": "players", "players":
+                 [i.rect.center for i in game.players.sprites() if i != self.player and i.alive]}
+        return rdict
+
+    def update_stat(self):
+        try:
+            stats = []
+            for i in self.factory.game.players:
+                stats.append([i.score, i.name, i.kills])
+                if len(stats) >= 10:
+                    break
+            stats = sorted(stats)
+            stats.reverse()
+            return {"action": "stats", "stat": stats}
+        except:
+            return {}
 
     def update_bullets(self):
-        self.enque({"action": "bullets", 'bullets': [i.rect.center for i in bullets.get_group().sprites()]})
+        return {"action": "bullets", 'bullets': [i.rect.center for i in bullets.get_group().sprites()]}
 
     def update_self(self):
         identifier = str(self.player.weapon.id if self.player.mode == 'weapon' else self.player.ability.id)
@@ -209,7 +240,7 @@ class MyProtocol(ServerUDP):
                'hp': self.player.health, 'score': self.player.score}
         if self.player.mode == 'weapon':
             msg.update({"ammo": self.player.weapon.ammo})
-        self.enque(msg)
+        return msg
 
 
 class MyFactory(UDPServerFactory):
@@ -222,7 +253,7 @@ class MyFactory(UDPServerFactory):
     def build_protocol(self, addr):
         if UDPServerFactory.build_protocol(self, addr):
             # This does nothing right now, but might be useful later
-            self.verify_send({"action": "settings", "ver": __version__}, addr)
+            self.verify_send({"action": "settings", "ver": __version__, "map": CURRENT_MAP}, addr)
 
 
 if __name__ == "__main__":

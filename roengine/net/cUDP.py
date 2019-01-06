@@ -76,7 +76,6 @@ class UDPServerFactory(DatagramProtocol):
     def __init__(self, host, port, maxClients=1):
         self.max_clients = maxClients
         self.clients = []
-        self.handled_ids = []
         self.client_protocols = {}
         self.arrivals_confirmed = {}
         self.host, self.port = host, port
@@ -119,7 +118,7 @@ class UDPServerFactory(DatagramProtocol):
                     elif LOG_NO_HANDLERS:
                         cUDPServerLogger.critical('%s Got packet without handler: %s', self.address, packet)
                 except Exception as e:
-                    cUDPServerLogger.exception("%s Self's network_ failed on:", self.address, packet)
+                    cUDPServerLogger.exception("%s Self's network_ failed on: %s", self.address, packet)
         except Exception as e:
             cUDPServerLogger.exception("%s Invalid packet from %s: %s", self.address, address, message)
         if LOG_GETS:
@@ -175,10 +174,12 @@ class UDPServerFactory(DatagramProtocol):
         message['action'] = 'confirm_arrival'
         self.send_to_addr(message, address)
         cUDPServerLogger.info("%s verify_send%s", self.address, (message, address))
+        '''
         if message['id'] in self.handled_ids:
             cUDPServerLogger.critical("%s Got repeat verify_send! Ignoring...", self.address)
             return
         self.handled_ids.append(message['id'])
+        '''
         try:
             if hasattr(self.client_protocols[address], "network_" + message['data']["action"]):
                 getattr(self.client_protocols[address], "network_" + message['data']["action"])(message['data'])
@@ -330,10 +331,12 @@ class EnqueUDPClient(DatagramProtocol):
     def network_verify_send(self, message, address):
         message['action'] = 'confirm_arrival'
         self.enque(message)
+        '''
         if message['id'] in self.handled_ids:
             cUDPClientLogger.critical("%s Got repeat verify_send! Ignoring...", self.address)
             return
         self.handled_ids.append(message['id'])
+        '''
         try:
             if hasattr(self, "network_" + message['data']["action"]):
                 getattr(self, "network_" + message['data']["action"])(message['data'], address)

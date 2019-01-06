@@ -40,7 +40,8 @@ class _BulletRegistry(object):
         self._bullets.update()
         col = pygame.sprite.groupcollide(self._bullets, self.shootables, False, False)
         for key in col.keys():
-            key.on_collide(col[key])
+            print key in self._bullets
+            key.bullet_on_collide(col[key])
 
 
 bullets = _BulletRegistry()
@@ -61,7 +62,7 @@ class Bullet(Projectile):
                   random.uniform(-blume[1], blume[1]))
         self.velocity = self.vel_to_target(self.target) + pygame.math.Vector2(ablume)
 
-    def on_collide(self, col_list):
+    def bullet_on_collide(self, col_list):
         for i in col_list:
             if i != self.parent:
                 i.damage(self.damage, self)
