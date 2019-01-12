@@ -42,7 +42,7 @@ def event_logger(self, event, exclude_events=(), include_events=()):
 class ServerTest(Game):
     def start(self):
         pygame.init()
-        self.screen = pygame.display.set_mode([640, 480])
+        self.screen = pygame.display.set_mode([1, 1])
         self.update_rects([640, 480])
         self.mouse_sprite = Obstacle([10, 10], [0, 0])
         self.mouse_pos = [0, 0]
@@ -149,6 +149,7 @@ class ServerTest(Game):
 
         [i.tick() for i in factory.client_protocols.values()]
 
+        '''
         self.map.fill(self.background_col)
         self.map.draw_group(self.TEST_MAP)
         self.map.draw_group(self.players)
@@ -158,6 +159,7 @@ class ServerTest(Game):
         self.screen.fill([255, 255, 255])
         self.map.blit_to(self.screen)
         pygame.display.update(self.current_rect)
+        '''
 
         for event in pygame.event.get():
             event_logger(self, event)
@@ -190,7 +192,6 @@ class MyProtocol(ServerUDP):
                     self.player.mode = 'weapon'
 
     def network_cli_settings(self, msg):
-        print ("Got %s" % msg['name'])
         self.player.name = msg['name']
 
     def tick(self):

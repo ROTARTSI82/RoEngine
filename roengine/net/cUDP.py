@@ -34,6 +34,7 @@ def adopt_udp_port(cls, addr=('127.0.0.1', 3000), args=(), kwargs={}):
     From https://twistedmatrix.com/documents/15.1.0/core/howto/udp.html
 
     :param cls:
+    :param addr:
     :return: None
     """
     portSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -51,6 +52,7 @@ def adopt_udp_port(cls, addr=('127.0.0.1', 3000), args=(), kwargs={}):
 class ServerUDP(object):
     factory = None
     address = None
+
     def __init__(self):
         self.send_que = []
 
@@ -73,6 +75,7 @@ class ServerUDP(object):
 
 class UDPServerFactory(DatagramProtocol):
     protocol = ServerUDP
+
     def __init__(self, host, port, maxClients=1):
         self.max_clients = maxClients
         self.clients = []
@@ -111,7 +114,7 @@ class UDPServerFactory(DatagramProtocol):
                     elif LOG_NO_HANDLERS:
                         cUDPServerLogger.critical('%s Got packet without handler: %s', self.address, packet)
                 except Exception as e:
-                    cUDPServerLogger.exception("%s Protocol's network_ failed on: ", self.address, packet)
+                    cUDPServerLogger.exception("%s Protocol's network_ failed on: %s", self.address, packet)
                 try:
                     if hasattr(self, "network_" + packet["action"]):
                         getattr(self, "network_" + packet["action"])(packet, address)

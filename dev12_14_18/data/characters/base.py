@@ -1,8 +1,10 @@
 import pygame
 import time
 import random
+pygame.init()
 
 from pygame.locals import *
+from roengine.game.animation import *
 from roengine import *
 from dev12_14_18.CONFIG import *
 from dev12_14_18.data.weapons.weapons import *
@@ -10,6 +12,14 @@ from dev12_14_18.data.weapons.weapons import *
 WEAPON_KEYS = WEAPON_KEYBINDS.keys()
 ABILITY_KEYS = ABILITY_KEYBINDS.keys()
 _weapon_switch = Action('weapon_switch', 0, 0)
+
+#spritesheet = pygame.image.load("./data/sprites/player.png")
+fps = 1.0/5
+#death = [(from_spritesheet([0, 0, 32, 32], spritesheet), fps), (from_spritesheet([32, 0, 32, 32], spritesheet), fps),
+#         (from_spritesheet([0, 32, 32, 32], spritesheet), fps), (from_spritesheet([32, 32, 32, 32], spritesheet), fps),
+#         (from_spritesheet([0, 64, 32, 32], spritesheet), fps), (from_spritesheet([64, 64, 32, 32], spritesheet), fps)]
+#birth = list(reversed(death))
+# cannot use convert_alpha yet.
 
 
 class Dash(Action):
@@ -46,6 +56,15 @@ class BasicCharacter(PlatformerPlayer):
     streak_multiplier = 0.25
 
     def __init__(self, game):
+        global death, birth, spritesheet
+        spritesheet = pygame.image.load("./data/sprites/Player.png")
+        death = [(from_spritesheet([0, 0, 32, 32], spritesheet), fps),
+                 (from_spritesheet([32, 0, 32, 32], spritesheet), fps),
+                 (from_spritesheet([0, 32, 32, 32], spritesheet), fps),
+                 (from_spritesheet([32, 32, 32, 32], spritesheet), fps),
+                 (from_spritesheet([0, 64, 32, 32], spritesheet), fps),
+                 (from_spritesheet([64, 64, 32, 32], spritesheet), fps)]
+        birth = list(reversed(death))
         PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
         self.image.fill([0, 0, 255])
         self.health = 100
@@ -60,11 +79,16 @@ class BasicCharacter(PlatformerPlayer):
         self.game = game
         self.respawn_start = 0
         self.alive = True
+        self.animations = Animation(mode='sec', idle=death[0][0], loop=False)
+        prev_center = self.rect.center
+        self.rect = self.animations.idle_frame.get_rect()
+        self.rect.center = prev_center
         self.spawn_locations = [[0, 0], ]
 
         self.speed = 5
         self.firing = False
         self.aiming_at = [0, 0]
+        self.mouse_at = [0, 0]
         self.action_manager = ActionManager()
         WArgs = (self, self.action_manager)
         self.inv = {'weapon_1': SMG(*WArgs), 'weapon_2': AssaultRifle(*WArgs), 'weapon_3': AutomaticShotgun(*WArgs),
@@ -77,11 +101,15 @@ class BasicCharacter(PlatformerPlayer):
     def onDamageDealt(self, amount):
         self.score += (1+self.streak*self.streak_multiplier) * amount
 
+    def onDeath(self):
+        self.animations.play_anim(death, death[-1][0])
+
     def onRespawn(self):
         """
         Reset all our attributes.
         :return: None
         """
+        self.animations.play_anim(birth, death[0][0])
         self.position = pygame.math.Vector2(random.choice(self.spawn_locations))
         self.velocity = pygame.math.Vector2(0, 0)
         self.rotation = 0
@@ -115,15 +143,16 @@ class BasicCharacter(PlatformerPlayer):
                 self.action_manager.do_action(_weapon_switch, True)
                 self.ability = self.abilities[ABILITY_KEYBINDS[event.key]]
                 self.mode = 'ability'
-                self.game.weapon_txt.update_text("Ability: " + str(self.ability))
+                if hasattr(self.game, 'weapon_txt'):
+                    self.game.weapon_txt.update_text("Ability: " + str(self.ability))
             if event.key in WEAPON_KEYS:
                 self.action_manager.do_action(_weapon_switch, True)
                 self.weapon = self.inv[WEAPON_KEYBINDS[event.key]]
                 self.mode = 'weapon'
-                self.game.weapon_txt.update_text("Item: " + str(self.weapon))
+                if hasattr(self.game, 'weapon_txt'):
+                    self.game.weapon_txt.update_text("Item: " + str(self.weapon))
         if event.type == MOUSEMOTION:
-            pos = self.game.map.translate_pos(event.dict['pos'])
-            self.aiming_at = pos
+            self.mouse_at = event.dict['pos']
         if event.type == MOUSEBUTTONDOWN:
             self.firing = True
         if event.type == MOUSEBUTTONUP:
@@ -136,30 +165,35 @@ class BasicCharacter(PlatformerPlayer):
         if self.health <= 0 and self.alive:
             bullet.parent.kills += 1
             bullet.parent.streak += 1
-            self.rect.center = [0, 0]
-            self.update_pos()
+            #self.rect.center = [0, 0]
+            #self.update_pos()
             self.streak = 0
             self.alive = False
             self.respawn_start = time.time()
+            self.onDeath()
 
-    def update(self):
-        self.health = max(min(self.health, self.max_hp), 0)  # Do we have to do this every frame?
+    def update(self, upd_pos=True):
+        self.animations.update()
+        self.master_image = self.animations.get_frame()
+        self.update_rot(self.aiming_at)
         self.action_manager.tick()
         self.weapon.tick()
         if self.health <= 0 and self.alive:
-            self.rect.center = [0, 0]
-            self.update_pos()
+            #self.rect.center = [0, 0]
+            #self.update_pos()
             self.streak = 0
             self.alive = False
             self.respawn_start = time.time()
+            self.onDeath()
 
-        if self.alive:
+        if self.alive and upd_pos:
+            self.aiming_at = self.game.map.translate_pos(self.mouse_at)
             if self.firing and self.mode == 'weapon':
                 self.weapon.tick_fire(self.aiming_at)
             if self.firing and self.mode == 'ability':
                 self.action_manager.do_action(self.ability)
             PlatformerPlayer.update(self)
-        else:
+        elif not self.alive:
             if time.time()-self.respawn_start > self.respawn_cool:
                 self.onRespawn()
 

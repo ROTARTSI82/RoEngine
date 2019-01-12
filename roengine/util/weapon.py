@@ -40,7 +40,6 @@ class _BulletRegistry(object):
         self._bullets.update()
         col = pygame.sprite.groupcollide(self._bullets, self.shootables, False, False)
         for key in col.keys():
-            print key in self._bullets
             key.bullet_on_collide(col[key])
 
 
@@ -173,6 +172,8 @@ class Weapon(object):
                 return  # CASE: Already reloading
 
     def tick(self):
+        if self.ammo == self.maxMag:
+            self.actionManager.stop()
         if self.reserve <= 0 and self.ammo <= 0:
             return  # CASE: No ammo.
         if self.ammo <= 0 and (not self.reloading):
@@ -191,11 +192,15 @@ class Weapon(object):
         damage = self.dps / rof if rof != 0 else 0
         self._fire(damage, target_pos)
 
+    def onFire(self):
+        pass
+
     def _fire(self, damage, target_pos):
         if self.reserve > 0 and (self.reloading or self.ammo <= 0):
             return  # CASE: Fire while reloading
         elif self.reserve <= 0 and self.ammo <= 0:
             return  # CASE: Fire with no ammo!
+        self.onFire()
         bullets.register(self.bullet(damage, target_pos, self.parent, self.blume))
         self.ammo -= 1
 

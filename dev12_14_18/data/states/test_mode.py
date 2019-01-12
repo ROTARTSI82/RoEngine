@@ -114,20 +114,20 @@ def tick_test_mode(self):
         event_logger(self, event)
         self.player.update_event(event)
         self.universal_events(event)
-        if event.type == MOUSEMOTION:
-            self.player.aiming_at = self.map.translate_pos(event.pos)
-        if event.type == MOUSEBUTTONDOWN:
-            self.player.firing = True
-        if event.type == MOUSEBUTTONUP:
-            self.player.firing = False
+        #if event.type == MOUSEMOTION:
+        #    self.player.aiming_at = self.map.translate_pos(event.pos)
+        #if event.type == MOUSEBUTTONDOWN:
+        #    self.player.firing = True
+        #if event.type == MOUSEBUTTONUP:
+        #    self.player.firing = False
         if event.type == KEYDOWN:
             # '''
             if event.key == K_DOWN:
                 self.player.health -= 10
             if event.key == K_UP:
                 self.player.health += 10
-            if event.key == K_r and self.player.mode == 'weapon':
-                self.player.weapon.force_reload()
+            #if event.key == K_r and self.player.mode == 'weapon':
+            #    self.player.weapon.force_reload()
             # '''
             if event.key == K_e:
                 n = TargetDummy()

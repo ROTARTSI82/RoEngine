@@ -15,6 +15,7 @@ test_modeLogger = logging.getLogger('multiplayer_test')
 
 VALID_SERV_VER = ['dev12.30.18', ]
 DEBUG = True
+PREDICTION = False
 NAME = raw_input("Enter your nickname: ")
 
 
@@ -73,7 +74,7 @@ class LeaderboardPopup(PopUp):
         self.game.hud_layer.draw_sprite(self.text)
         for i, v in enumerate(self.game.leaders):
             # stats.append([i.score, i.name, i.kills])
-            self.board[i].update_text("%s: %s | %i points | %i kills" % (i + 1, v[1], v[0], v[2]))
+            self.board[i].update_text("%s: %s | %i points | %i kills" % (i + 1, v[1], ceil(v[0]), v[2]))
         for i in self.board:
             self.game.hud_layer.draw_sprite(i)
         for event in pygame.event.get():
@@ -119,7 +120,7 @@ class Client(EnqueUDPClient):
         self.game.player.mode = 'weapon' if msg['item'][0] == 'w' else 'ability'
         if self.game.player.mode == 'weapon':
             self.game.player.weapon = self.game.player.inv['weapon_' + msg['item'][1:]]
-            self.game.player.ammo = msg['ammo']
+            self.game.player.weapon.ammo = msg['ammo']
         if self.game.player.mode == 'ability':
             self.game.player.ability = self.game.player.abilities['ability_' + msg['item'][1:]]
 
@@ -217,7 +218,9 @@ def tick_mult_test(self):
     self.client.tick()
     pygame.display.set_caption(str(self.clock.get_fps()))
 
-    self.player.update()
+    self.player.update(PREDICTION)
+    self.player.action_manager.tick()
+    self.player.weapon.tick()
     # bullets.update()  # Its full of obstacle objects lol
 
     if (not self.player.alive) and (not self.respawn.is_open):
@@ -227,7 +230,7 @@ def tick_mult_test(self):
     self.hp_bar.val = self.player.health
     self.hp_bar.update()
     self.hp_txt.update_text("Health: %i" % ceil(self.player.health))
-    self.kill_txt.update_text("Score: %i" % round(self.player.score))
+    self.kill_txt.update_text("Score: %i" % ceil(self.player.score))
     if DEBUG:
         since_start = (time.time() - self.client.start) * 1000  # Measure in Kb
         txt = "Recv: %.2fKB/s | Send: %.2fKB/s" % (self.client.recv_bytes / since_start,
@@ -260,10 +263,10 @@ def tick_mult_test(self):
         self.hud_layer.draw_sprite(self.reload_txt)
 
     self.map.fill(self.background_col)
+    self.map.draw_group(bullets.get_group())
     self.map.draw_group(self.TEST_MAP)
     self.map.draw_sprite(self.player)
     self.map.draw_group(self.players)
-    self.map.draw_group(bullets.get_group())
     self.map.get_scroll(self.player.rect.center, self.screen, (self.screen.get_width()/2,
                                                                self.screen.get_height()/2), (True, True))
     self.map.scale_to(self.screen, MAP_ZOOM)

@@ -317,5 +317,6 @@ if __name__ == '__main__':
     pygame.init()
     test = FrequencyPlayer([[[i, i], 0.01, 0] for i in range(20, 20000, 100)])
     test.play()  # Ok this is a bad idea. EDIT: sync_play is event worse.
+    # save_sound(test.sound, '~/Downloads/terror.wav')
     while pygame.mixer.get_busy():
         pass
