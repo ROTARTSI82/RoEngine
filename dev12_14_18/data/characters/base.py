@@ -15,10 +15,9 @@ _weapon_switch = Action('weapon_switch', 0, 0)
 
 #spritesheet = pygame.image.load("./data/sprites/player.png")
 fps = 1.0/5
-#death = [(from_spritesheet([0, 0, 32, 32], spritesheet), fps), (from_spritesheet([32, 0, 32, 32], spritesheet), fps),
-#         (from_spritesheet([0, 32, 32, 32], spritesheet), fps), (from_spritesheet([32, 32, 32, 32], spritesheet), fps),
-#         (from_spritesheet([0, 64, 32, 32], spritesheet), fps), (from_spritesheet([64, 64, 32, 32], spritesheet), fps)]
-#birth = list(reversed(death))
+death = []
+birth = []
+init = False
 # cannot use convert_alpha yet.
 
 
@@ -56,15 +55,17 @@ class BasicCharacter(PlatformerPlayer):
     streak_multiplier = 0.25
 
     def __init__(self, game):
-        global death, birth, spritesheet
-        spritesheet = pygame.image.load("./data/sprites/Player.png")
-        death = [(from_spritesheet([0, 0, 32, 32], spritesheet), fps),
-                 (from_spritesheet([32, 0, 32, 32], spritesheet), fps),
-                 (from_spritesheet([0, 32, 32, 32], spritesheet), fps),
-                 (from_spritesheet([32, 32, 32, 32], spritesheet), fps),
-                 (from_spritesheet([0, 64, 32, 32], spritesheet), fps),
-                 (from_spritesheet([64, 64, 32, 32], spritesheet), fps)]
-        birth = list(reversed(death))
+        global death, birth, spritesheet, init
+        if not init:
+            spritesheet = pygame.image.load("./data/sprites/Player.png")
+            death = [(from_spritesheet([0, 0, 32, 32], spritesheet), fps),
+                     (from_spritesheet([32, 0, 32, 32], spritesheet), fps),
+                     (from_spritesheet([0, 32, 32, 32], spritesheet), fps),
+                     (from_spritesheet([32, 32, 32, 32], spritesheet), fps),
+                     (from_spritesheet([0, 64, 32, 32], spritesheet), fps),
+                     (from_spritesheet([64, 64, 32, 32], spritesheet), fps)]
+            birth = list(reversed(death))
+            init = True
         PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
         self.image.fill([0, 0, 255])
         self.health = 100
@@ -172,7 +173,7 @@ class BasicCharacter(PlatformerPlayer):
             self.respawn_start = time.time()
             self.onDeath()
 
-    def update(self, upd_pos=True):
+    def update(self, upd_pos=True, is_server=False):
         self.animations.update()
         self.master_image = self.animations.get_frame()
         self.update_rot(self.aiming_at)
@@ -186,13 +187,15 @@ class BasicCharacter(PlatformerPlayer):
             self.respawn_start = time.time()
             self.onDeath()
 
-        if self.alive and upd_pos:
-            self.aiming_at = self.game.map.translate_pos(self.mouse_at)
-            if self.firing and self.mode == 'weapon':
+        if self.alive:
+            if not is_server:
+                self.aiming_at = self.game.map.translate_pos(self.mouse_at)
+            if self.firing and self.mode == 'weapon' and upd_pos:
                 self.weapon.tick_fire(self.aiming_at)
-            if self.firing and self.mode == 'ability':
+            if self.firing and self.mode == 'ability' and upd_pos:
                 self.action_manager.do_action(self.ability)
-            PlatformerPlayer.update(self)
+            if upd_pos:
+                PlatformerPlayer.update(self)
         elif not self.alive:
             if time.time()-self.respawn_start > self.respawn_cool:
                 self.onRespawn()

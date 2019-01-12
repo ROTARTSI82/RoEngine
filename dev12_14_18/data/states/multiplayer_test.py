@@ -9,11 +9,12 @@ from dev12_14_18.data.characters.base import *
 from pygame.locals import *
 from roengine.net.cUDP import *
 from roengine import *
+from roengine.game.animation import from_spritesheet
 from dev12_14_18.CONFIG import *
 
 test_modeLogger = logging.getLogger('multiplayer_test')
 
-VALID_SERV_VER = ['dev12.30.18', ]
+VALID_SERV_VER = ['dev1.12.19', ]
 DEBUG = True
 PREDICTION = False
 NAME = raw_input("Enter your nickname: ")
@@ -89,6 +90,25 @@ class LeaderboardPopup(PopUp):
         self.is_open = False
 
 
+class DummyPlayer(pygame.sprite.Sprite):
+    def __init__(self, args, image):
+        self.pos, self.rot = args
+        pygame.sprite.Sprite.__init__(self)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.center = self.pos
+        self.image = pygame.transform.rotate(self.image, self.rot)
+
+class DummyBullet(pygame.sprite.Sprite):
+    def __init__(self, args, image):
+        self.pos, self.rot, self.type = args
+        pygame.sprite.Sprite.__init__(self)
+        self.image = image[self.type]
+        self.rect = self.image.get_rect()
+        self.rect.center = self.pos
+        self.image = pygame.transform.rotate(self.image, self.rot)
+
+
 class Client(EnqueUDPClient):
     def __init__(self, host, port, game):
         EnqueUDPClient.__init__(self, host, port)
@@ -110,8 +130,8 @@ class Client(EnqueUDPClient):
 
     def network_update(self, msg, addr):
         self.game.leaders = msg['stat']
-        bullets._bullets = pygame.sprite.Group(*[Obstacle([10, 10], i) for i in msg['bullets']])
-        self.game.players = pygame.sprite.Group(*[Obstacle([16, 16], i, color=(0, 0, 255)) for i in msg['players']])
+        bullets._bullets = pygame.sprite.Group(*[DummyBullet(i, self.game.bul_pics) for i in msg['bullets']])
+        self.game.players = pygame.sprite.Group(*[DummyPlayer(i, self.game.pic) for i in msg['players']])
 
         self.game.player.score = msg['score']
         self.game.player.rect.center = msg['pos']
@@ -153,6 +173,9 @@ def enter_mult_test(self, old):
     self.leaders = []
     self.client = Client('127.0.0.1', 3000, self)
     self.client.load()
+    sheet = pygame.image.load("./data/sprites/Player.png")
+    self.pic = from_spritesheet([0, 0, 32, 32], sheet)
+    self.bul_pics = [from_spritesheet([32, 96, 32, 32], sheet), from_spritesheet([0, 96, 32, 32], sheet)]
     self.TEST_MAP = pygame.sprite.Group(Obstacle([100, 10], [100, 400]),
                                         Obstacle([100, 10], [150, 428]),
                                         Obstacle([10, 400], [250, 28]),
@@ -218,7 +241,7 @@ def tick_mult_test(self):
     self.client.tick()
     pygame.display.set_caption(str(self.clock.get_fps()))
 
-    self.player.update(PREDICTION)
+    self.player.update(PREDICTION, False)
     self.player.action_manager.tick()
     self.player.weapon.tick()
     # bullets.update()  # Its full of obstacle objects lol

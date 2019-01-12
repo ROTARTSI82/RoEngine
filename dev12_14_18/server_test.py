@@ -27,7 +27,7 @@ ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
 
-__version__ = 'dev12.30.18'
+__version__ = 'dev1.12.19'
 
 test_modeLogger = logging.getLogger('server_test')
 
@@ -144,7 +144,7 @@ class ServerTest(Game):
         self.clock.tick()
         pygame.display.set_caption(str(self.clock.get_fps()))
 
-        self.players.update()
+        self.players.update(True, True)
         bullets.update()
 
         [i.tick() for i in factory.client_protocols.values()]
@@ -216,7 +216,7 @@ class MyProtocol(ServerUDP):
 
     def update_players(self):
         rdict = {"action": "players", "players":
-                 [i.rect.center for i in game.players.sprites() if i != self.player and i.alive]}
+                 [[i.rect.center, i.rotation] for i in game.players.sprites() if i != self.player and i.alive]}
         return rdict
 
     def update_stat(self):
@@ -233,7 +233,8 @@ class MyProtocol(ServerUDP):
             return {}
 
     def update_bullets(self):
-        return {"action": "bullets", 'bullets': [i.rect.center for i in bullets.get_group().sprites()]}
+        return {"action": "bullets", 'bullets': [(i.rect.center, i.rotation, i.type)
+                                                 for i in bullets.get_group().sprites()]}
 
     def update_self(self):
         identifier = str(self.player.weapon.id if self.player.mode == 'weapon' else self.player.ability.id)

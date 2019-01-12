@@ -57,6 +57,7 @@ class Bullet(Projectile):
         self.bounds = (0, 0)
         self.blume = blume
         self.wobble = wobble
+        self.type = 0
         ablume = (random.uniform(-blume[0], blume[0]),
                   random.uniform(-blume[1], blume[1]))
         self.velocity = self.vel_to_target(self.target) + pygame.math.Vector2(ablume)
