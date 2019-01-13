@@ -1,6 +1,7 @@
 import pygame
 import math
 import time
+from roengine.config import USE_ROTOZOOM
 
 __all__ = ["Projectile", ]
 
@@ -51,10 +52,13 @@ class Projectile(pygame.sprite.Sprite):
             self.velocity = pygame.math.Vector2((dx / travelTime), (dy / travelTime))
         return self.velocity
 
-    def rot_to_target(self, target_pos, update_rect=True):
+    def rot_to_target(self, target_pos, scale=1.0, update_rect=True):
         delta_pos = [target_pos[0] - self.position.x, target_pos[1] - self.position.y]
         self.rotation = math.degrees(math.atan2(-delta_pos[1], delta_pos[0])) - 90
-        self.image = pygame.transform.rotate(self.master_image, self.rotation)
+        if USE_ROTOZOOM:
+            self.image = pygame.transform.rotozoom(self.master_image, self.rotation, scale)
+        else:
+            self.image = pygame.transform.rotate(self.master_image, self.rotation)
         if update_rect:
             self.rect = self.image.get_rect()
             self.snap_rect()

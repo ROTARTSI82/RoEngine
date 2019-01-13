@@ -53,11 +53,12 @@ class BasicCharacter(PlatformerPlayer):
     keybinds = BASIC_KEYBINDS
     respawn_cool = 5
     streak_multiplier = 0.25
+    ZOOM = 0.75
 
-    def __init__(self, game):
+    def __init__(self, game, img_path="./data/sprites/Player.png"):
         global death, birth, spritesheet, init
         if not init:
-            spritesheet = pygame.image.load("./data/sprites/Player.png")
+            spritesheet = pygame.image.load(img_path).convert_alpha()
             death = [(from_spritesheet([0, 0, 32, 32], spritesheet), fps),
                      (from_spritesheet([32, 0, 32, 32], spritesheet), fps),
                      (from_spritesheet([0, 32, 32, 32], spritesheet), fps),
@@ -66,7 +67,7 @@ class BasicCharacter(PlatformerPlayer):
                      (from_spritesheet([64, 64, 32, 32], spritesheet), fps)]
             birth = list(reversed(death))
             init = True
-        PlatformerPlayer.__init__(self, pygame.Surface([16, 16]).convert_alpha())
+        PlatformerPlayer.__init__(self, death[0][0].convert_alpha())
         self.image.fill([0, 0, 255])
         self.health = 100
         self.max_hp = 100
@@ -82,7 +83,7 @@ class BasicCharacter(PlatformerPlayer):
         self.alive = True
         self.animations = Animation(mode='sec', idle=death[0][0], loop=False)
         prev_center = self.rect.center
-        self.rect = self.animations.idle_frame.get_rect()
+        self.rect = pygame.transform.rotozoom(self.animations.idle_frame, 0, self.ZOOM).get_rect()
         self.rect.center = prev_center
         self.spawn_locations = [[0, 0], ]
 
@@ -160,6 +161,8 @@ class BasicCharacter(PlatformerPlayer):
             self.firing = False
 
     def damage(self, damage, bullet):
+        if not self.alive:
+            return
         bullet.req_kill()
         bullet.parent.onDamageDealt(damage)
         self.health -= damage * self.defense
@@ -173,12 +176,13 @@ class BasicCharacter(PlatformerPlayer):
             self.respawn_start = time.time()
             self.onDeath()
 
-    def update(self, upd_pos=True, is_server=False):
-        self.animations.update()
-        self.master_image = self.animations.get_frame()
-        self.update_rot(self.aiming_at)
+    def update(self, upd_pos=True, is_server=False, is_replay=False):
         self.action_manager.tick()
         self.weapon.tick()
+        self.animations.update()
+        self.master_image = self.animations.get_frame()
+        if not is_replay:
+            self.update_rot(self.aiming_at, self.ZOOM)
         if self.health <= 0 and self.alive:
             #self.rect.center = [0, 0]
             #self.update_pos()

@@ -9,12 +9,13 @@ from dev12_14_18.data.characters.base import *
 from pygame.locals import *
 from roengine.net.cUDP import *
 from roengine import *
+from roengine.game.recording import GameRecorder
 from roengine.game.animation import from_spritesheet
 from dev12_14_18.CONFIG import *
 
 test_modeLogger = logging.getLogger('multiplayer_test')
 
-VALID_SERV_VER = ['dev1.12.19', ]
+VALID_SERV_VER = ['dev01.12.19b', ]
 DEBUG = True
 PREDICTION = False
 NAME = raw_input("Enter your nickname: ")
@@ -97,7 +98,8 @@ class DummyPlayer(pygame.sprite.Sprite):
         self.image = image
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
-        self.image = pygame.transform.rotate(self.image, self.rot)
+        self.image = pygame.transform.rotozoom(self.image, self.rot, ZOOM_VALS['player'])
+
 
 class DummyBullet(pygame.sprite.Sprite):
     def __init__(self, args, image):
@@ -106,7 +108,7 @@ class DummyBullet(pygame.sprite.Sprite):
         self.image = image[self.type]
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
-        self.image = pygame.transform.rotate(self.image, self.rot)
+        self.image = pygame.transform.rotozoom(self.image, self.rot, ZOOM_VALS['bullets'][self.type])
 
 
 class Client(EnqueUDPClient):
@@ -129,6 +131,7 @@ class Client(EnqueUDPClient):
         EnqueUDPClient.datagramReceived(self, message, address)
 
     def network_update(self, msg, addr):
+        self.game.recording.record_get(msg, addr)
         self.game.leaders = msg['stat']
         bullets._bullets = pygame.sprite.Group(*[DummyBullet(i, self.game.bul_pics) for i in msg['bullets']])
         self.game.players = pygame.sprite.Group(*[DummyPlayer(i, self.game.pic) for i in msg['players']])
@@ -137,6 +140,7 @@ class Client(EnqueUDPClient):
         self.game.player.rect.center = msg['pos']
         self.game.player.health = msg['hp']
         self.game.player.update_pos()
+        self.game.player.rotation = msg['rot']
         self.game.player.mode = 'weapon' if msg['item'][0] == 'w' else 'ability'
         if self.game.player.mode == 'weapon':
             self.game.player.weapon = self.game.player.inv['weapon_' + msg['item'][1:]]
@@ -145,6 +149,7 @@ class Client(EnqueUDPClient):
             self.game.player.ability = self.game.player.abilities['ability_' + msg['item'][1:]]
 
     def network_settings(self, msg, addr):
+        self.game.recording.record_get(msg, addr)
         if not msg['ver'] in VALID_SERV_VER:
             test_modeLogger.critical("Invalid server version: %s", msg['ver'])
         try:
@@ -171,6 +176,8 @@ def event_logger(self, event, exclude_events=(), include_events=()):
 
 def enter_mult_test(self, old):
     self.leaders = []
+    self.recording = GameRecorder()
+    self.recording.start()
     self.client = Client('127.0.0.1', 3000, self)
     self.client.load()
     sheet = pygame.image.load("./data/sprites/Player.png")
@@ -232,6 +239,8 @@ def enter_mult_test(self, old):
 
 
 def exit_mult_test(self, new):
+    self.recording.stop()
+    self.recording.save("/Users/Grant/Downloads/latest.replay")
     if new == 'main_menu':
         buttons.set_buttons(self.main_menu_bts)
 
@@ -306,12 +315,14 @@ def tick_mult_test(self):
         self.player.input_state = {"forward": False, "backward": False, "jump": False}
         return
     send = []
+    self.client.enque({"action": 'mouse', "pos": self.player.aiming_at})
     for event in pygame.event.get():
+        if event.type == QUIT:
+            self.recording.stop()
+            self.recording.save("/Users/Grant/Downloads/latest.replay")
         event_logger(self, event)
         self.player.update_event(event)
         self.universal_events(event)
-        if event.type == MOUSEMOTION:
-            send.append([event.type, {"pos": self.player.aiming_at}])
         if event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP:
             send.append([event.type, {"button": event.button}])
         if event.type == KEYDOWN:

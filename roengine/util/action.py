@@ -47,7 +47,7 @@ class ActionManager(object):
             if self.current_action is None:
                 return
             self.progress = now-self.action_start
-            if self.progress > self.action_duration:
+            if self.progress > self.current_action.duration:
                 self.current_action.finish()
                 self.current_action.last_use = now
                 self.current_action.cooldown_progress = self.current_action.cooldown
@@ -62,18 +62,18 @@ class ActionManager(object):
 
     def do_action(self, action, interrupt=False):
         now = time.time()
-        if now-action.last_use < action.cooldown:
-            action.reject("cooldown")
-            return  # CASE: Still on cooldown.
         if self.current_action is None:
             self.current_action = action
             self.action_start = now
             action.start()
             self.action_duration = action.duration
-            return  # Do the actin
+            return  # Do the action
         if action.action_id == self.current_action.action_id and self.reject_dups:
             action.reject("duplicate")
             return  # CASE: Already doing that action!
+        if now-action.last_use < action.cooldown:
+            action.reject("cooldown")
+            return  # CASE: Still on cooldown.
         if interrupt:
             self.current_action.interrupted()
             self.current_action.last_use = now

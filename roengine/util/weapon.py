@@ -173,8 +173,8 @@ class Weapon(object):
                 return  # CASE: Already reloading
 
     def tick(self):
-        if self.ammo == self.maxMag:
-            self.actionManager.stop()
+        #if self.ammo == self.maxMag and self.actionManager.current_action.action_id == 1:
+        #    self.actionManager.stop()
         if self.reserve <= 0 and self.ammo <= 0:
             return  # CASE: No ammo.
         if self.ammo <= 0 and (not self.reloading):

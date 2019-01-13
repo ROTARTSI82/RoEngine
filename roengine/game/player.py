@@ -1,15 +1,9 @@
 import pygame
 import math
 from roengine.util import Dummy
+from roengine.config import PLAYER_KEYBINDS, USE_ROTOZOOM
 
-__all__ = ["PlatformerPlayer", 'set_keybinds']
-
-PLAYER_KEYBINDS = {'jump': (pygame.K_SPACE, pygame.K_w), 'forward': (pygame.K_d, ), 'backward': (pygame.K_a, )}
-
-
-def set_keybinds(keybinds):
-    global PLAYER_KEYBINDS
-    PLAYER_KEYBINDS = keybinds
+__all__ = ["PlatformerPlayer"]
 
 
 class PlatformerPlayer(pygame.sprite.Sprite):
@@ -59,12 +53,16 @@ class PlatformerPlayer(pygame.sprite.Sprite):
         self.position.y += self.velocity.y
         self.update_rect()
 
-    def update_rot(self, target_pos):
+    def update_rot(self, target_pos, scale=1.0, update_rect=False):
         delta_pos = [target_pos[0] - self.position.x, target_pos[1] - self.position.y]
         self.rotation = math.degrees(math.atan2(-delta_pos[1], delta_pos[0])) - 90
-        self.image = pygame.transform.rotate(self.master_image, self.rotation)
-        # self.rect = self.image.get_rect()
-        # self.update_rect()
+        if USE_ROTOZOOM:
+            self.image = pygame.transform.rotozoom(self.master_image, self.rotation, scale)
+        else:
+            self.image = pygame.transform.rotate(self.master_image, self.rotation)
+        if update_rect:
+            self.rect = self.image.get_rect()
+            self.update_rect()
 
     def update_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:

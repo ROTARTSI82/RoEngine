@@ -4,7 +4,7 @@ from pygame.locals import *
 
 __all__ = ['SCREEN_RES', 'SCREEN_FLAGS', 'HUD_RES', 'RECORD_LOGS', 'LOG_CONSOLE', 'WRITE_LATEST', 'LATEST_LEVEL',
            'OUTPUT_LEVEL', 'CONSOLE_LEVEL', 'MAP_ZOOM', 'ABILITY_KEYBINDS', 'WEAPON_KEYBINDS', 'RECT_MODE',
-           'BASIC_KEYBINDS']
+           'BASIC_KEYBINDS', 'ZOOM_VALS']
 
 # CRITICAL/FATAL = 50
 # ERROR = 40
@@ -16,6 +16,8 @@ __all__ = ['SCREEN_RES', 'SCREEN_FLAGS', 'HUD_RES', 'RECORD_LOGS', 'LOG_CONSOLE'
 RECORD_LOGS = False  # Write logs to file
 LOG_CONSOLE = True  # Write logs to console
 WRITE_LATEST = True  # Write to latest.log
+
+ZOOM_VALS = {"player": 0.75, 'bullets': {0: 0.75, 1: 0.5}}
 
 LATEST_LEVEL = 10  # for latest.log. (DEBUG)
 OUTPUT_LEVEL = 10  # for normal files. (DEBUG)

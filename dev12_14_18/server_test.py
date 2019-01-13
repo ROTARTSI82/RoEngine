@@ -27,7 +27,7 @@ ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
 
-__version__ = 'dev1.12.19'
+__version__ = 'dev01.12.19b'
 
 test_modeLogger = logging.getLogger('server_test')
 
@@ -177,8 +177,6 @@ class MyProtocol(ServerUDP):
     def network_event(self, msg):
         for event in [pygame.event.Event(*i) for i in msg['events']]:
             self.player.update_event(event)
-            if event.type == MOUSEMOTION:
-                self.player.aiming_at = event.pos
             if event.type == KEYDOWN:
                 if event.key == K_r and self.player.mode == 'weapon':
                     self.player.weapon.force_reload()
@@ -190,6 +188,9 @@ class MyProtocol(ServerUDP):
                     self.player.action_manager.do_action(weapon_switch, True)
                     self.player.weapon = self.player.inv[WEAPON_KEYBINDS[event.key]]
                     self.player.mode = 'weapon'
+
+    def network_mouse(self, msg):
+        self.player.aiming_at = msg['pos']
 
     def network_cli_settings(self, msg):
         self.player.name = msg['name']
@@ -239,7 +240,7 @@ class MyProtocol(ServerUDP):
     def update_self(self):
         identifier = str(self.player.weapon.id if self.player.mode == 'weapon' else self.player.ability.id)
         msg = {"action": "self", "pos": self.player.rect.center, "item": self.player.mode[0]+identifier,
-               'hp': self.player.health, 'score': self.player.score}
+               'hp': self.player.health, 'score': self.player.score, "rot": self.player.rotation}
         if self.player.mode == 'weapon':
             msg.update({"ammo": self.player.weapon.ammo})
         return msg

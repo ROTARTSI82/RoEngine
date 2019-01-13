@@ -8,6 +8,7 @@ import socket
 
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
+from roengine.config import LOG_NO_HANDLERS, LOG_GETS, LOG_SENDS
 
 
 __all__ = ['ServerUDP', 'EnqueUDPClient', 'UDPServerFactory', 'adopt_udp_port']
@@ -18,15 +19,6 @@ dump = rencode.dumps
 cUDPServerLogger = logging.getLogger('cUDP.ServFac')
 cUDPClientLogger = logging.getLogger('cUDP.CliFac')
 cUDPServProtLogger = logging.getLogger('cUDP.ServProt')
-
-LOG_NO_HANDLERS = False
-LOG_SENDS = False
-LOG_GETS = False
-
-
-def cUDP_settings(lsends=False, lgets=False, lnhdlrs=False):
-    global LOG_GETS, LOG_SENDS, LOG_NO_HANDLERS
-    LOG_SENDS, LOG_GETS, LOG_NO_HANDLERS = lsends, lgets, lnhdlrs
 
 
 def adopt_udp_port(cls, addr=('127.0.0.1', 3000), args=(), kwargs={}):

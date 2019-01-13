@@ -11,4 +11,4 @@ from .map import *
 from .player import *
 from .projectile import *
 
-__all__ = ["Map", "PlatformerPlayer", "Projectile", "set_keybinds"]
+__all__ = ["Map", "PlatformerPlayer", "Projectile"]
