@@ -54,7 +54,7 @@ class DummyBullet(pygame.sprite.Sprite):
 class ReplayPlayerApp(Game):
     def start(self):
         self.replay = CustomPlayer(self)
-        self.replay.set_speed(2)
+        self.replay.set_speed(1)
         self.replay.start()
         msg = self.replay.from_file("/Users/Grant/Downloads/latest.replay")
         pygame.init()
@@ -156,6 +156,13 @@ class ReplayPlayerApp(Game):
 
         pygame.display.flip()
         for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == K_RIGHT:
+                    self.replay.set_speed(self.replay.speed+0.5)
+                    print self.replay.speed
+                if event.key == K_LEFT:
+                    self.replay.set_speed(self.replay.speed-0.5)
+                    print self.replay.speed
             if event.type == VIDEORESIZE:
                 self.screen = pygame.display.set_mode(event.dict['size'], RESIZABLE)
             if event.type == QUIT:

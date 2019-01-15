@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger("recording")
 
 from roengine.net.rencode import dumps, loads
+RANGE = 1 / 6.0
 
 
 class GameRecorder(object):
@@ -55,6 +56,8 @@ class RecordingPlayer(object):
         self.started_on = -1
         self.speed = 1
         self.game = game
+        self.prog = 0
+        self.lastUpdate = -1
         self.contents = {}
 
     def from_file(self, filename):
@@ -78,12 +81,21 @@ class RecordingPlayer(object):
 
     def update(self):
         assert self.started_on != -1, "RecordingPlayer not started"
-        now = (time.time() - self.started_on) * self.speed
+        now = time.time()
+        if self.lastUpdate == -1:
+            self.lastUpdate = now
+        self.prog += (now - self.lastUpdate) * self.speed
+        self.lastUpdate = now
+        canidates = {}
         for i in self.contents['gets'].keys():
-            if i <= now:
-                for packet in self.contents['gets'][i]:
-                    self.apply_packet(packet, now, i)
-                del self.contents['gets'][i]
+            if self.prog-RANGE <= i <= self.prog+RANGE:
+                canidates[i] = self.contents['gets'][i]
+        if self.speed < 0 and canidates:
+            best = sorted(canidates.keys())[0]
+            [self.apply_packet(packet, now, best) for packet in canidates[best]]
+        elif canidates:
+            best = sorted(canidates.keys())[-1]
+            [self.apply_packet(packet, now, best) for packet in canidates[best]]
 
     def apply_packet(self, packet, actual_time, expected_time):
         pass
