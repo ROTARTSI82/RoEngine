@@ -93,12 +93,12 @@ class BasicCharacter(PlatformerPlayer):
         self.mouse_at = [0, 0]
         self.action_manager = ActionManager()
         WArgs = (self, self.action_manager)
-        self.inv = {'weapon_1': SMG(*WArgs), 'weapon_2': AssaultRifle(*WArgs), 'weapon_3': AutomaticShotgun(*WArgs),
-                    'weapon_4': Sniper(*WArgs)}
-        self.abilities = {'ability_1': Dash(self, self.game), 'ability_2': Flight(self, self.game)}
-        self.ability = self.abilities['ability_1']
+        self.inv = {'1': SMG(*WArgs), '2': AssaultRifle(*WArgs), '3': AutomaticShotgun(*WArgs),
+                    '4': Sniper(*WArgs)}
+        self.abilities = {'1': Dash(self, self.game), '2': Flight(self, self.game)}
+        self.ability = self.abilities['1']
         self.mode = 'weapon'
-        self.weapon = self.inv['weapon_1']
+        self.weapon = self.inv['1']
 
     def onDamageDealt(self, amount):
         self.score += (1+self.streak*self.streak_multiplier) * amount
@@ -129,12 +129,12 @@ class BasicCharacter(PlatformerPlayer):
         self.aiming_at = [0, 0]
         self.action_manager = ActionManager()
         WArgs = (self, self.action_manager)
-        self.inv = {'weapon_1': SMG(*WArgs), 'weapon_2': AssaultRifle(*WArgs), 'weapon_3': AutomaticShotgun(*WArgs),
-                    'weapon_4': Sniper(*WArgs)}
-        self.abilities = {'ability_1': Dash(self, self.game), 'ability_2': Flight(self, self.game)}
-        self.ability = self.abilities['ability_1']
+        self.inv = {'1': SMG(*WArgs), '2': AssaultRifle(*WArgs), '3': AutomaticShotgun(*WArgs),
+                    '4': Sniper(*WArgs)}
+        self.abilities = {'1': Dash(self, self.game), '2': Flight(self, self.game)}
+        self.ability = self.abilities['1']
         self.mode = 'weapon'
-        self.weapon = self.inv['weapon_1']
+        self.weapon = self.inv['1']
 
     def update_event(self, event):
         PlatformerPlayer.update_event(self, event)
@@ -176,13 +176,12 @@ class BasicCharacter(PlatformerPlayer):
             self.respawn_start = time.time()
             self.onDeath()
 
-    def update(self, upd_pos=True, is_server=False, is_replay=False):
+    def update(self, upd_pos=True, is_server=False):
         self.action_manager.tick()
         self.weapon.tick()
         self.animations.update()
         self.master_image = self.animations.get_frame()
-        if not is_replay:
-            self.update_rot(self.aiming_at, self.ZOOM)
+        self.update_rot(self.aiming_at, self.ZOOM)
         if self.health <= 0 and self.alive:
             #self.rect.center = [0, 0]
             #self.update_pos()

@@ -143,10 +143,10 @@ class Client(EnqueUDPClient):
         self.game.player.rotation = msg['rot']
         self.game.player.mode = 'weapon' if msg['item'][0] == 'w' else 'ability'
         if self.game.player.mode == 'weapon':
-            self.game.player.weapon = self.game.player.inv['weapon_' + msg['item'][1:]]
+            self.game.player.weapon = self.game.player.inv[msg['item'][1:]]
             self.game.player.weapon.ammo = msg['ammo']
         if self.game.player.mode == 'ability':
-            self.game.player.ability = self.game.player.abilities['ability_' + msg['item'][1:]]
+            self.game.player.ability = self.game.player.abilities[msg['item'][1:]]
 
     def network_settings(self, msg, addr):
         self.game.recording.record_get(msg, addr)
@@ -216,7 +216,7 @@ def enter_mult_test(self, old):
     self.weapon_txt = Text("Item: " + str(self.player.weapon), bg=(255, 255, 255))
     self.weapon_txt.rect.center = HUD_RES[0] / 2, 55
 
-    self.debug_txt = Text("Ping: 0 | Recv: 0 | Send: 0", bg=(255, 255, 255))
+    self.debug_txt = Text("Recv: 0 | Send: 0", bg=(255, 255, 255))
     self.debug_txt.rect.centerx = HUD_RES[0] / 2
     self.debug_txt.rect.bottom = HUD_RES[1] - 5
 

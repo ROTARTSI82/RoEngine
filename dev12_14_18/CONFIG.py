@@ -29,6 +29,6 @@ MAP_ZOOM = (3, 1)  # It's stretched on any other res...
 SCREEN_FLAGS = RESIZABLE
 RECT_MODE = 'whole_rect'
 
-ABILITY_KEYBINDS = {K_v: 'ability_1', K_c: 'ability_2'}
-WEAPON_KEYBINDS = {K_1: 'weapon_1', K_2: 'weapon_2', K_3: 'weapon_3', K_4: 'weapon_4'}
+ABILITY_KEYBINDS = {K_v: '1', K_c: '2'}
+WEAPON_KEYBINDS = {K_1: '1', K_2: '2', K_3: '3', K_4: '4'}
 BASIC_KEYBINDS = {'jump': (K_SPACE, K_w), 'forward': (K_d, ), 'backward': (K_a, )}

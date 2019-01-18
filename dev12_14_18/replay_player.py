@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 import json
 import pygame
+import datetime
 from pygame.locals import *
 
 from math import ceil
@@ -25,10 +26,10 @@ class CustomPlayer(RecordingPlayer):
                                                            self.game.player.ZOOM)
         self.game.player.mode = 'weapon' if packet['item'][0] == 'w' else 'ability'
         if self.game.player.mode == 'weapon':
-            self.game.player.weapon = self.game.player.inv['weapon_' + packet['item'][1:]]
+            self.game.player.weapon = self.game.player.inv[packet['item'][1:]]
             self.game.player.weapon.ammo = packet['ammo']
         if self.game.player.mode == 'ability':
-            self.game.player.ability = self.game.player.abilities['ability_' + packet['item'][1:]]
+            self.game.player.ability = self.game.player.abilities[packet['item'][1:]]
 
 
 class DummyPlayer(pygame.sprite.Sprite):
@@ -51,12 +52,24 @@ class DummyBullet(pygame.sprite.Sprite):
         self.image = pygame.transform.rotozoom(self.image, self.rot, ZOOM_VALS['bullets'][self.type])
 
 
+def fmtdeltatime(time):
+    ret = [0, 0, 0, str(time % 1)[2:]]
+    for i in range(2, -1, -1):
+        ret[i] = int(time % 60)
+        time = int(time / 60)
+    return "%.2i:%.2i:%.2i.%s" % tuple(ret)
+
+
 class ReplayPlayerApp(Game):
     def start(self):
         self.replay = CustomPlayer(self)
         self.replay.set_speed(1)
         self.replay.start()
         msg = self.replay.from_file("/Users/Grant/Downloads/latest.replay")
+        # print msg
+        print ("===================[NOW PLAYING: /Users/Grant/Downloads/latest.replay]====================")
+        print ("Created: %s" % datetime.datetime.fromtimestamp(msg['start']))
+        print ("Length: %s" % fmtdeltatime(msg['len']))
         pygame.init()
         self.screen = pygame.display.set_mode([640, 480], RESIZABLE)
         self.map = Map([1500, 500])
@@ -65,7 +78,7 @@ class ReplayPlayerApp(Game):
         self.bul_pics = [from_spritesheet([32, 96, 32, 32], sheet), from_spritesheet([0, 96, 32, 32], sheet)]
         self.hud_layer = Map([960, 720])
         self.player = BasicCharacter(self)
-        # self.player.update()
+        self.player.update()
         self.players = pygame.sprite.Group()
         with open("./data/maps/%s.json" % msg['map'], 'r') as fp:
             map_json = json.load(fp)
@@ -108,7 +121,7 @@ class ReplayPlayerApp(Game):
 
     def tick_main(self):
         self.replay.update()
-        self.player.update(False, is_replay=True)
+        # self.player.update(False, is_replay=True)
         self.player.action_manager.tick()
         self.player.weapon.tick()
         self.hp_bar.val = self.player.health

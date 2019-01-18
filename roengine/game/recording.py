@@ -51,6 +51,10 @@ class GameRecorder(object):
         return dat
 
 
+def clamp(minimum, maximum, val):
+    return min(maximum, max(minimum, val))
+
+
 class RecordingPlayer(object):
     def __init__(self, game):
         self.started_on = -1
@@ -79,12 +83,12 @@ class RecordingPlayer(object):
     def set_speed(self, speed):
         self.speed = speed
 
-    def update(self):
+    def update(self, progress_clamper=clamp):
         assert self.started_on != -1, "RecordingPlayer not started"
         now = time.time()
         if self.lastUpdate == -1:
             self.lastUpdate = now
-        self.prog += (now - self.lastUpdate) * self.speed
+        self.prog = progress_clamper(0, self.contents['len'], self.prog + (now - self.lastUpdate) * self.speed)
         self.lastUpdate = now
         canidates = {}
         for i in self.contents['gets'].keys():

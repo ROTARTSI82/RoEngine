@@ -62,6 +62,9 @@ class ActionManager(object):
 
     def do_action(self, action, interrupt=False):
         now = time.time()
+        if now-action.last_use < action.cooldown:
+            action.reject("cooldown")
+            return  # CASE: Still on cooldown.
         if self.current_action is None:
             self.current_action = action
             self.action_start = now
@@ -71,9 +74,6 @@ class ActionManager(object):
         if action.action_id == self.current_action.action_id and self.reject_dups:
             action.reject("duplicate")
             return  # CASE: Already doing that action!
-        if now-action.last_use < action.cooldown:
-            action.reject("cooldown")
-            return  # CASE: Still on cooldown.
         if interrupt:
             self.current_action.interrupted()
             self.current_action.last_use = now
