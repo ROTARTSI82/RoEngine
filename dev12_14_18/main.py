@@ -23,8 +23,9 @@ from data.states import *
 ## TODO
 # Come up with a actual name...
 # Optimize test_mode.py:53-62 (Do we need to update these every frame?)
-# player.check_bottom_grounded
 # Client doesn't quit after backing out.
+# Send cooldown times over connection
+# allow for custom keybinds on server
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder

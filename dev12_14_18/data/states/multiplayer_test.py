@@ -118,7 +118,8 @@ class Client(EnqueUDPClient):
         self.recv_bytes = 0
         self.start = time.time()
         self.game = game
-        self.verify_send({"action": "cli_settings", "name": NAME})
+        self.verify_send({"action": "cli_settings", "name": NAME, "ability_keys": ABILITY_KEYBINDS,
+                          "basic_keys": BASIC_KEYBINDS, "weapon_keys": {K_z: '1', K_x: '2', K_3: '3', K_4: '4'}})
 
     def tick(self):
         if DEBUG and self.send_que:
@@ -144,9 +145,15 @@ class Client(EnqueUDPClient):
         self.game.player.mode = 'weapon' if msg['item'][0] == 'w' else 'ability'
         if self.game.player.mode == 'weapon':
             self.game.player.weapon = self.game.player.inv[msg['item'][1:]]
+            self.game.weapon_txt.update_text("Item: " + str(self.game.player.weapon))
             self.game.player.weapon.ammo = msg['ammo']
+            self.game.reload_txt.update_text("%.1f" % msg["reload_prog"])
         if self.game.player.mode == 'ability':
+            self.game.reload_txt.update_text("%.1f" % msg["action_cool"])
+            # action_dur = "%.1f" %
+            self.game.ammo_txt.update_text("%.1f" % msg['action_dur'])
             self.game.player.ability = self.game.player.abilities[msg['item'][1:]]
+            self.game.weapon_txt.update_text("Ability: " + str(self.game.player.ability))
 
     def network_settings(self, msg, addr):
         self.game.recording.record_get(msg, addr)
@@ -251,8 +258,6 @@ def tick_mult_test(self):
     pygame.display.set_caption(str(self.clock.get_fps()))
 
     self.player.update(PREDICTION, False)
-    self.player.action_manager.tick()
-    self.player.weapon.tick()
     # bullets.update()  # Its full of obstacle objects lol
 
     if (not self.player.alive) and (not self.respawn.is_open):
@@ -269,15 +274,15 @@ def tick_mult_test(self):
                                                    self.client.send_bytes / since_start)
         self.debug_txt.update_text(txt)
     if self.player.mode == 'weapon':
-        self.reload_progress = "%.1f" % \
-                               (self.player.action_manager.action_duration - self.player.action_manager.progress)
-        self.reload_txt.update_text(self.reload_progress)
+        # self.reload_progress = "%.1f" % \
+        # self.reload_txt.update_text(self.reload_progress)
 
         self.ammo_txt.update_text(str(self.player.weapon.ammo) + '/inf')
     else:
-        self.reload_txt.update_text("%.1f" % self.player.ability.get_cooldown())
-        action_dur = "%.1f" % (self.player.action_manager.action_duration - self.player.action_manager.progress)
-        self.ammo_txt.update_text(action_dur)
+        pass  # this stuff is handled in network_update
+        # self.reload_txt.update_text("%.1f" % self.player.ability.get_cooldown())
+        # action_dur = "%.1f" % (self.player.action_manager.action_duration - self.player.action_manager.progress)
+        # self.ammo_txt.update_text(action_dur)
 
     self.screen.fill([255, 255, 255])
 
@@ -321,7 +326,7 @@ def tick_mult_test(self):
             self.recording.stop()
             self.recording.save("/Users/Grant/Downloads/latest.replay")
         event_logger(self, event)
-        self.player.update_event(event)
+        self.player.update_event(event, False)
         self.universal_events(event)
         if event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP:
             send.append([event.type, {"button": event.button}])

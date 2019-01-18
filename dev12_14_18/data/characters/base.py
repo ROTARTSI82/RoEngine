@@ -51,6 +51,11 @@ class Flight(Action):
 
 class BasicCharacter(PlatformerPlayer):
     keybinds = BASIC_KEYBINDS
+    ability_keybinds = ABILITY_KEYBINDS
+    weapon_keybinds = WEAPON_KEYBINDS
+    weapon_keys = weapon_keybinds.keys()
+    ability_keys = ability_keybinds.keys()
+
     respawn_cool = 5
     streak_multiplier = 0.25
     ZOOM = 0.75
@@ -136,22 +141,22 @@ class BasicCharacter(PlatformerPlayer):
         self.mode = 'weapon'
         self.weapon = self.inv['1']
 
-    def update_event(self, event):
+    def update_event(self, event, upd_txt=True):
         PlatformerPlayer.update_event(self, event)
         if event.type == KEYDOWN:
             if event.key == K_r and self.mode == 'weapon':
                 self.weapon.force_reload()
-            if event.key in ABILITY_KEYS:
+            if event.key in self.ability_keys:
                 self.action_manager.do_action(_weapon_switch, True)
-                self.ability = self.abilities[ABILITY_KEYBINDS[event.key]]
+                self.ability = self.abilities[self.ability_keybinds[event.key]]
                 self.mode = 'ability'
-                if hasattr(self.game, 'weapon_txt'):
+                if hasattr(self.game, 'weapon_txt') and upd_txt:
                     self.game.weapon_txt.update_text("Ability: " + str(self.ability))
-            if event.key in WEAPON_KEYS:
+            if event.key in self.weapon_keys:
                 self.action_manager.do_action(_weapon_switch, True)
-                self.weapon = self.inv[WEAPON_KEYBINDS[event.key]]
+                self.weapon = self.inv[self.weapon_keybinds[event.key]]
                 self.mode = 'weapon'
-                if hasattr(self.game, 'weapon_txt'):
+                if hasattr(self.game, 'weapon_txt') and upd_txt:
                     self.game.weapon_txt.update_text("Item: " + str(self.weapon))
         if event.type == MOUSEMOTION:
             self.mouse_at = event.dict['pos']

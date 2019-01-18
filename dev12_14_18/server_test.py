@@ -193,6 +193,11 @@ class MyProtocol(ServerUDP):
         self.player.aiming_at = msg['pos']
 
     def network_cli_settings(self, msg):
+        self.player.keybinds = msg['basic_keys']
+        self.player.ability_keybinds = msg['ability_keys']
+        self.player.weapon_keybinds = msg['weapon_keys']
+        self.player.weapon_keys = self.player.weapon_keybinds.keys()
+        self.player.ability_keys = self.player.ability_keybinds.keys()
         self.player.name = msg['name']
 
     def tick(self):
@@ -243,6 +248,10 @@ class MyProtocol(ServerUDP):
                'hp': self.player.health, 'score': self.player.score, "rot": self.player.rotation}
         if self.player.mode == 'weapon':
             msg.update({"ammo": self.player.weapon.ammo})
+            msg["reload_prog"] = (self.player.action_manager.action_duration - self.player.action_manager.progress)
+        else:
+            msg["action_cool"] = self.player.ability.get_cooldown()
+            msg["action_dur"] = (self.player.action_manager.action_duration - self.player.action_manager.progress)
         return msg
 
 
