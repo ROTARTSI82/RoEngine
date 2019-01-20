@@ -97,16 +97,19 @@ class ReplayPlayerApp(Game):
         self.clear_surf = pygame.Surface(HUD_RES, SRCALPHA, 32).convert_alpha()
 
         self.hp_bar = ProgressBar((0, self.player.max_hp), 100,
-                                  (HUD_RES[0] - 200, 25), (2, 2), ((255, 0, 0), (128, 128, 128)))
-        self.hp_bar.rect.center = HUD_RES[0] / 2, 25
+                                  (HUD_RES[0] - 200, 20), (2, 2), ((255, 0, 0), (128, 128, 128)))
+        self.hp_bar.rect.center = HUD_RES[0] / 2, 15
+        self.sh_bar = ProgressBar((0, self.player.max_shield[0]), 100,
+                                  (HUD_RES[0] - 200, 20), (2, 2), ((0, 0, 255), (128, 128, 128)))
+        self.sh_bar.rect.center = HUD_RES[0] / 2, 40
 
         self.reload_progress = self.player.action_manager.action_duration - self.player.action_manager.progress
         self.reload_txt = Text(str(self.reload_progress)[:3], bg=(255, 255, 255))
         self.reload_txt.rect.right = HUD_RES[0] - 100
-        self.reload_txt.rect.centery = 55
+        self.reload_txt.rect.centery = 65
 
         self.weapon_txt = Text("Item: " + str(self.player.weapon), bg=(255, 255, 255))
-        self.weapon_txt.rect.center = HUD_RES[0] / 2, 55
+        self.weapon_txt.rect.center = HUD_RES[0] / 2, 65
 
         self.debug_txt = Text("Ping: 0 | Recv: 0 | Send: 0", bg=(255, 255, 255))
         self.debug_txt.rect.centerx = HUD_RES[0] / 2
@@ -115,13 +118,15 @@ class ReplayPlayerApp(Game):
         self.hp_txt = Text("Health: " + str(self.player.health))
         self.hp_txt.rect.center = self.hp_bar.rect.center
 
+        self.sh_txt = Text("Shield: 100")
+        self.sh_txt.rect.center = self.sh_bar.rect.center
+
         self.kill_txt = Text("Score: 0", bg=(255, 255, 255))
-        self.kill_txt.rect.centerx = HUD_RES[0] / 2
-        self.kill_txt.rect.top = self.weapon_txt.rect.bottom + 5
+        self.kill_txt.rect.center = HUD_RES[0] / 2, 87
 
         self.ammo_txt = Text(str(self.player.weapon.ammo) + '/inf', bg=(255, 255, 255))
         self.ammo_txt.rect.left = 100
-        self.ammo_txt.rect.centery = 55
+        self.ammo_txt.rect.centery = 65
 
         self.running = True
 
@@ -131,8 +136,11 @@ class ReplayPlayerApp(Game):
         self.player.action_manager.tick()
         self.player.weapon.tick()
         self.hp_bar.val = self.player.health
+        self.sh_bar.val = self.player.shield
         self.hp_bar.update()
-        self.hp_txt.update_text("Health: %i | Shield %i" % (ceil(self.player.health), ceil(self.player.shield)))
+        self.sh_bar.update()
+        self.sh_txt.update_text("Shield: %i" % ceil(self.player.shield))
+        self.hp_txt.update_text("Health: %i" % ceil(self.player.health))
         self.kill_txt.update_text("Score: %i" % ceil(self.player.score))
         if self.player.mode == 'weapon':
             #self.weapon_txt.update_text("Item: " + str(self.player.weapon))
@@ -155,6 +163,8 @@ class ReplayPlayerApp(Game):
         self.hud_layer.draw_sprite(self.kill_txt)
         self.hud_layer.draw_sprite(self.hp_bar)
         self.hud_layer.draw_sprite(self.hp_txt)
+        self.hud_layer.draw_sprite(self.sh_bar)
+        self.hud_layer.draw_sprite(self.sh_txt)
         if self.ammo_txt.text != '0.0':
             self.hud_layer.draw_sprite(self.ammo_txt)
         self.hud_layer.draw_sprite(self.weapon_txt)

@@ -13,16 +13,18 @@ WEAPON_KEYS = WEAPON_KEYBINDS.keys()
 ABILITY_KEYS = ABILITY_KEYBINDS.keys()
 _weapon_switch = Action('weapon_switch', 0, 0)
 
-#spritesheet = pygame.image.load("./data/sprites/player.png")
 fps = 1.0/5
 death = []
 birth = []
 init = False
 # cannot use convert_alpha yet.
 
-SHIELD_PER_SECOND = 10
+SHIELD_PER_SECOND = 7.5
+HEALTH_PER_SECOND = 2
 FRAMES_PER_SECOND = 60
+STUN_DURATION = 5  # How long to wait without taking damage before shields start regenerating
 SHIELD_PLUS = SHIELD_PER_SECOND / float(FRAMES_PER_SECOND)  # Remember python 2 floor division
+HEALTH_PLUS = HEALTH_PER_SECOND / float(FRAMES_PER_SECOND)
 
 
 class Dash(Action):
@@ -81,7 +83,8 @@ class BasicCharacter(PlatformerPlayer):
         self.health = 100
         self.max_hp = 100
         self.shield = 100
-        self.max_shield = 100
+        self.shield_cooldown = {"start": 0, "duration": 0}
+        self.max_shield = 100, 100  # First item is the max shield points, shield is divided by second to get percent
         self.name = 'Player'
 
         self.kills = 0
@@ -134,7 +137,8 @@ class BasicCharacter(PlatformerPlayer):
         self.input_state = {"forward": False, "backward": False, "jump": False}
         self.alive = True
         self.health = self.max_hp
-        self.shield = self.max_shield
+        self.shield = self.max_shield[0]
+        self.shield_cooldown = {"start": 0, "duration": 0}
         self.streak = 0
 
         self.aiming_at = [0, 0]
@@ -150,19 +154,19 @@ class BasicCharacter(PlatformerPlayer):
     def update_event(self, event, upd_txt=True):
         PlatformerPlayer.update_event(self, event)
         if event.type == KEYDOWN:
-            if event.key == K_r and self.mode == 'weapon':
+            if event.key == K_r and self.mode == 'weapon' and upd_txt:
                 self.weapon.force_reload()
-            if event.key in self.ability_keys:
+            if event.key in self.ability_keys and upd_txt:
                 self.action_manager.do_action(_weapon_switch, True)
                 self.ability = self.abilities[self.ability_keybinds[event.key]]
                 self.mode = 'ability'
-                if hasattr(self.game, 'weapon_txt') and upd_txt:
+                if hasattr(self.game, 'weapon_txt'):
                     self.game.weapon_txt.update_text("Ability: " + str(self.ability))
-            if event.key in self.weapon_keys:
+            if event.key in self.weapon_keys and upd_txt:
                 self.action_manager.do_action(_weapon_switch, True)
                 self.weapon = self.inv[self.weapon_keybinds[event.key]]
                 self.mode = 'weapon'
-                if hasattr(self.game, 'weapon_txt') and upd_txt:
+                if hasattr(self.game, 'weapon_txt'):
                     self.game.weapon_txt.update_text("Item: " + str(self.weapon))
         if event.type == MOUSEMOTION:
             self.mouse_at = event.dict['pos']
@@ -176,16 +180,16 @@ class BasicCharacter(PlatformerPlayer):
             return
         bullet.req_kill()
         bullet.parent.onDamageDealt(damage)
-        # print ("Damage %s | Shield %s | Health %s" % (damage, self.shield, self.health))
         if self.shield > 0:
-            shield_percent = self.shield / float(self.max_shield)
+            shield_percent = self.shield / float(self.max_shield[1])
             self.health -= damage * (1 - shield_percent)
             self.shield -= damage * shield_percent
             if self.shield < 0:
                 self.health += self.shield  # Deduct abs(shield) since the shield failed to reflect that damage
         else:
             self.health -= damage
-        # print ("RESULT: Health: %s | Shield: %s" % (self.health, self.shield))
+        self.shield_cooldown['start'] = time.time()
+        self.shield_cooldown['duration'] = STUN_DURATION
         if self.health <= 0 and self.alive:
             bullet.parent.kills += 1
             bullet.parent.streak += 1
@@ -197,7 +201,9 @@ class BasicCharacter(PlatformerPlayer):
             self.onDeath()
 
     def update(self, upd_pos=True, is_server=False):
-        self.shield = min(self.max_shield, self.shield + SHIELD_PLUS)  # Could we do this another way?
+        if time.time() - self.shield_cooldown['start'] > self.shield_cooldown['duration'] and upd_pos:
+            self.shield = min(self.max_shield[0], self.shield + SHIELD_PLUS)  # Could we do this another way?
+            self.health = min(self.max_hp, self.health + HEALTH_PLUS)
         self.action_manager.tick()
         self.weapon.tick()
         self.animations.update()

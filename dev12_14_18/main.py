@@ -24,8 +24,7 @@ from data.states import *
 # Come up with a actual name...
 # Optimize test_mode.py:53-62 (Do we need to update these every frame?)
 # Client doesn't quit after backing out.
-# Send cooldown times over connection
-# allow for custom keybinds on server
+# Is the shield regen rate too fast?
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder
