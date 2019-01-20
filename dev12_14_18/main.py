@@ -29,9 +29,9 @@ from data.states import *
 ##
 
 __appName__ = "_UntitledApp"  # Placeholder
-__version__ = 'dev01.12.19'
+__version__ = 'dev01.19.19'
 __author__ = "Grant Yang <rotartsi0482@gmail.com>"
-__date__ = '12 January 2019'
+__date__ = '19 January 2019'
 
 
 class D12_11_18(Game):

@@ -20,6 +20,7 @@ class CustomPlayer(RecordingPlayer):
         self.game.player.score = packet['score']
         self.game.player.rect.center = packet['pos']
         self.game.player.health = packet['hp']
+        self.game.player.shield = packet['sh']
         self.game.player.update_pos()
         self.game.player.rotation = packet['rot']
         self.game.player.image = pygame.transform.rotozoom(self.game.player.master_image, packet['rot'],
@@ -27,9 +28,14 @@ class CustomPlayer(RecordingPlayer):
         self.game.player.mode = 'weapon' if packet['item'][0] == 'w' else 'ability'
         if self.game.player.mode == 'weapon':
             self.game.player.weapon = self.game.player.inv[packet['item'][1:]]
+            self.game.weapon_txt.update_text("Item: " + str(self.game.player.weapon))
             self.game.player.weapon.ammo = packet['ammo']
+            self.game.reload_txt.update_text("%.1f" % packet["reload_prog"])
         if self.game.player.mode == 'ability':
             self.game.player.ability = self.game.player.abilities[packet['item'][1:]]
+            self.game.ammo_txt.update_text("%.1f" % packet['action_dur'])
+            self.game.reload_txt.update_text("%.1f" % packet["action_cool"])
+            self.game.weapon_txt.update_text("Ability: " + str(self.game.player.ability))
 
 
 class DummyPlayer(pygame.sprite.Sprite):
@@ -126,20 +132,21 @@ class ReplayPlayerApp(Game):
         self.player.weapon.tick()
         self.hp_bar.val = self.player.health
         self.hp_bar.update()
-        self.hp_txt.update_text("Health: %i" % ceil(self.player.health))
+        self.hp_txt.update_text("Health: %i | Shield %i" % (ceil(self.player.health), ceil(self.player.shield)))
         self.kill_txt.update_text("Score: %i" % ceil(self.player.score))
         if self.player.mode == 'weapon':
-            self.weapon_txt.update_text("Item: " + str(self.player.weapon))
-            self.reload_progress = "%.1f" % \
-                                   (self.player.action_manager.action_duration - self.player.action_manager.progress)
-            self.reload_txt.update_text(self.reload_progress)
+            #self.weapon_txt.update_text("Item: " + str(self.player.weapon))
+            #self.reload_progress = "%.1f" % \
+            #                       (self.player.action_manager.action_duration - self.player.action_manager.progress)
+            #self.reload_txt.update_text(self.reload_progress)
 
             self.ammo_txt.update_text(str(self.player.weapon.ammo) + '/inf')
         else:
-            self.weapon_txt.update_text("Ability: " + str(self.player.ability))
-            self.reload_txt.update_text("%.1f" % self.player.ability.get_cooldown())
-            action_dur = "%.1f" % (self.player.action_manager.action_duration - self.player.action_manager.progress)
-            self.ammo_txt.update_text(action_dur)
+            pass  # moved into replay player
+            #self.weapon_txt.update_text("Ability: " + str(self.player.ability))
+            #self.reload_txt.update_text("%.1f" % self.player.ability.get_cooldown())
+            #action_dur = "%.1f" % (self.player.action_manager.action_duration - self.player.action_manager.progress)
+            #self.ammo_txt.update_text(action_dur)
 
         self.screen.fill([255, 255, 255])
 

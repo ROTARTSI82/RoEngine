@@ -27,7 +27,7 @@ ABVAL = ABILITY_KEYBINDS.keys()
 
 weapon_switch = Action('player', 10, 0)
 
-__version__ = 'dev01.12.19b'
+__version__ = 'dev01.19.19'
 
 test_modeLogger = logging.getLogger('server_test')
 
@@ -245,7 +245,8 @@ class MyProtocol(ServerUDP):
     def update_self(self):
         identifier = str(self.player.weapon.id if self.player.mode == 'weapon' else self.player.ability.id)
         msg = {"action": "self", "pos": self.player.rect.center, "item": self.player.mode[0]+identifier,
-               'hp': self.player.health, 'score': self.player.score, "rot": self.player.rotation}
+               'hp': self.player.health, 'score': self.player.score, "rot": self.player.rotation,
+               "sh": self.player.shield}
         if self.player.mode == 'weapon':
             msg.update({"ammo": self.player.weapon.ammo})
             msg["reload_prog"] = (self.player.action_manager.action_duration - self.player.action_manager.progress)

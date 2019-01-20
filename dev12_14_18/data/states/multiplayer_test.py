@@ -15,7 +15,7 @@ from dev12_14_18.CONFIG import *
 
 test_modeLogger = logging.getLogger('multiplayer_test')
 
-VALID_SERV_VER = ['dev01.12.19b', ]
+VALID_SERV_VER = ['dev01.19.19', ]
 DEBUG = True
 PREDICTION = False
 NAME = raw_input("Enter your nickname: ")
@@ -139,6 +139,7 @@ class Client(EnqueUDPClient):
 
         self.game.player.score = msg['score']
         self.game.player.rect.center = msg['pos']
+        self.game.player.shield = msg['sh']
         self.game.player.health = msg['hp']
         self.game.player.update_pos()
         self.game.player.rotation = msg['rot']
@@ -227,7 +228,7 @@ def enter_mult_test(self, old):
     self.debug_txt.rect.centerx = HUD_RES[0] / 2
     self.debug_txt.rect.bottom = HUD_RES[1] - 5
 
-    self.hp_txt = Text("Health: " + str(self.player.health))
+    self.hp_txt = Text("Health: 100 | Shield: 100")
     self.hp_txt.rect.center = self.hp_bar.rect.center
 
     self.kill_txt = Text("Score: 0", bg=(255, 255, 255))
@@ -266,7 +267,7 @@ def tick_mult_test(self):
 
     self.hp_bar.val = self.player.health
     self.hp_bar.update()
-    self.hp_txt.update_text("Health: %i" % ceil(self.player.health))
+    self.hp_txt.update_text("Health: %i | Shield: %i" % (ceil(self.player.health), ceil(self.player.shield)))
     self.kill_txt.update_text("Score: %i" % ceil(self.player.score))
     if DEBUG:
         since_start = (time.time() - self.client.start) * 1000  # Measure in Kb

@@ -20,6 +20,10 @@ birth = []
 init = False
 # cannot use convert_alpha yet.
 
+SHIELD_PER_SECOND = 10
+FRAMES_PER_SECOND = 60
+SHIELD_PLUS = SHIELD_PER_SECOND / float(FRAMES_PER_SECOND)  # Remember python 2 floor division
+
 
 class Dash(Action):
     def __init__(self, player, game):
@@ -76,7 +80,8 @@ class BasicCharacter(PlatformerPlayer):
         self.image.fill([0, 0, 255])
         self.health = 100
         self.max_hp = 100
-        self.defense = 1
+        self.shield = 100
+        self.max_shield = 100
         self.name = 'Player'
 
         self.kills = 0
@@ -129,6 +134,7 @@ class BasicCharacter(PlatformerPlayer):
         self.input_state = {"forward": False, "backward": False, "jump": False}
         self.alive = True
         self.health = self.max_hp
+        self.shield = self.max_shield
         self.streak = 0
 
         self.aiming_at = [0, 0]
@@ -170,7 +176,16 @@ class BasicCharacter(PlatformerPlayer):
             return
         bullet.req_kill()
         bullet.parent.onDamageDealt(damage)
-        self.health -= damage * self.defense
+        # print ("Damage %s | Shield %s | Health %s" % (damage, self.shield, self.health))
+        if self.shield > 0:
+            shield_percent = self.shield / float(self.max_shield)
+            self.health -= damage * (1 - shield_percent)
+            self.shield -= damage * shield_percent
+            if self.shield < 0:
+                self.health += self.shield  # Deduct abs(shield) since the shield failed to reflect that damage
+        else:
+            self.health -= damage
+        # print ("RESULT: Health: %s | Shield: %s" % (self.health, self.shield))
         if self.health <= 0 and self.alive:
             bullet.parent.kills += 1
             bullet.parent.streak += 1
@@ -182,6 +197,7 @@ class BasicCharacter(PlatformerPlayer):
             self.onDeath()
 
     def update(self, upd_pos=True, is_server=False):
+        self.shield = min(self.max_shield, self.shield + SHIELD_PLUS)  # Could we do this another way?
         self.action_manager.tick()
         self.weapon.tick()
         self.animations.update()
