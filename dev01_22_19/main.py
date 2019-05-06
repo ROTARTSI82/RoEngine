@@ -1,24 +1,15 @@
 # -*- coding: UTF-8 -*-
 
-import logging
-import warnings
-import traceback
-
-import platform
 import os
+import platform
 import sys
+import traceback
+import warnings
 
 import twisted
 
-import pygame
-from pygame.locals import *
-
 import generic_logging
-
-from CONFIG import *
-from roengine import *
 from data.states import *
-
 
 ## TODO
 # Come up with a actual name...

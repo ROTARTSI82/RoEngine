@@ -1,11 +1,12 @@
 # -*- coding: UTF-8 -*-
-import pygame
-import numpy
-import rand
-import wave
 import logging
 import warnings
+import wave
 
+import numpy
+import pygame
+
+import rand
 from roengine.util import Dummy
 
 BITS = 16
@@ -315,8 +316,8 @@ if __name__ == '__main__':
 
     pre_init()
     pygame.init()
-    test = FrequencyPlayer([[[i, i], 0.01, 0] for i in range(20, 20000, 100)])
+    test = FrequencyPlayer([[[i, i], 0.01, 0] for i in range(20, 20000, 20)])
     test.play()  # Ok this is a bad idea. EDIT: sync_play is event worse.
-    # save_sound(test.sound, '~/Downloads/terror.wav')
+    save_sound(test.sound, '/Users/Grant/Downloads/terror.wav')
     while pygame.mixer.get_busy():
         pass

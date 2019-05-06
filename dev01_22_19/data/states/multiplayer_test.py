@@ -1,17 +1,18 @@
 # -*- coding: UTF-8 -*-
 
-import logging
 import json
-from roengine.net.rencode import dumps
+import logging
 from math import ceil
 
-from dev12_14_18.data.characters.base import *
 from pygame.locals import *
-from roengine.net.cUDP import *
+
+from dev01_22_19.CONFIG import *
+from dev01_22_19.data.characters.base import *
 from roengine import *
-from roengine.game.recording import GameRecorder
 from roengine.game.animation import from_spritesheet
-from dev12_14_18.CONFIG import *
+from roengine.game.recording import GameRecorder
+from roengine.net.cUDP import *
+from roengine.net.rencode import dumps
 
 test_modeLogger = logging.getLogger('multiplayer_test')
 
@@ -25,7 +26,7 @@ class RespawnPopup(PopUp):
     def __init__(self, game):
         PopUp.__init__(self)
         self.game = game
-        self.text = Text("Oh nose! You died!", (HUD_RES[0]/2, HUD_RES[1]/2), fg=(255, 255, 255))
+        self.text = Text("Oh noes! You died!", (HUD_RES[0] / 2, HUD_RES[1] / 2), fg=(255, 255, 255))
         self.filter = pygame.Surface(self.game.screen.get_size(), pygame.SRCALPHA, 32).convert()
         self.filter.set_alpha(200)
 

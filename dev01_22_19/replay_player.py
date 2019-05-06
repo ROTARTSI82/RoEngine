@@ -1,15 +1,10 @@
 # -*- coding: UTF-8 -*-
-import json
-import pygame
 import datetime
-from pygame.locals import *
-
+import json
 from math import ceil
 
-from roengine import *
+from dev01_22_19.data.characters.base import *
 from roengine.game.recording import RecordingPlayer
-from roengine.game.animation import from_spritesheet
-from dev12_14_18.data.characters.base import *
 
 
 class CustomPlayer(RecordingPlayer):

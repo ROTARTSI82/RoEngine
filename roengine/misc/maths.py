@@ -1,8 +1,8 @@
 # -*- coding: UTF-8 -*-
 
-import sys
 import itertools
 import math
+import sys
 
 #__all__ = ['factorize', 'is_prime', 'is_perfect', 'prime_factorize',
 #           'lcm', 'gcf', 'reduce_frac', 'Fraction', 'MixedNumber']
@@ -335,4 +335,4 @@ if __name__ == "__main__":
         try:
             print(eval(inp))
         except:
-            exec inp
+            exec (inp)

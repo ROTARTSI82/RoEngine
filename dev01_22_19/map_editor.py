@@ -1,17 +1,16 @@
 # -*- coding: UTF-8 -*-
 
-from roengine import *
-
 # -*- coding: UTF-8 -*-
 
-import logging
 import json
+import logging
 from pprint import pprint
 
-from dev12_14_18.data.characters.base import *
 from pygame.locals import *
+
+from dev01_22_19.CONFIG import *
+from dev01_22_19.data.characters.base import *
 from roengine import *
-from dev12_14_18.CONFIG import *
 
 logger = logging.getLogger('map_editor')
 

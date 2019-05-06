@@ -1,9 +1,10 @@
 # -*- coding: UTF-8 -*-
 
-from roengine.game.animation import from_spritesheet
-from roengine import Bullet
-from dev12_14_18.CONFIG import ZOOM_VALS
 import pygame
+
+from dev01_22_19.CONFIG import ZOOM_VALS
+from roengine import Bullet
+from roengine.game.animation import from_spritesheet
 
 bullet_img = None
 shotgun_img = None

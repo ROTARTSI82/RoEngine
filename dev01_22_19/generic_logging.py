@@ -1,12 +1,12 @@
 # -*- coding: UTF-8 -*-
 
 import logging
-import time
 import os
 import sys
+import time
 
-from CONFIG import RECORD_LOGS, LOG_CONSOLE, WRITE_LATEST
 from CONFIG import LATEST_LEVEL, CONSOLE_LEVEL, OUTPUT_LEVEL
+from CONFIG import RECORD_LOGS, LOG_CONSOLE, WRITE_LATEST
 
 HEADER = ("="*40) + "[%s]" + ("="*40) + '\n'
 

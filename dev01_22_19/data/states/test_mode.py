@@ -2,10 +2,11 @@
 
 import logging
 
-from dev12_14_18.data.characters.base import *
 from pygame.locals import *
+
+from dev01_22_19.CONFIG import *
+from dev01_22_19.data.characters.base import *
 from roengine import *
-from dev12_14_18.CONFIG import *
 
 test_modeLogger = logging.getLogger('test_mode')
 

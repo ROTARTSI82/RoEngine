@@ -1,16 +1,15 @@
 # -*- coding: UTF-8 -*-
 
-import pygame
-import logging
 import json
+import logging
+import sys
+
 from pygame.locals import *
 
-import sys
-from dev12_14_18.data.characters.base import *
-from pygame.locals import *
+from dev01_22_19.CONFIG import *
+from dev01_22_19.data.characters.base import *
 from roengine import *
 from roengine.net.cUDP import *
-from dev12_14_18.CONFIG import *
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
